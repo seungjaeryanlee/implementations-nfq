@@ -8,22 +8,20 @@ import models
 import envs
 
 
-GAMMA = 0.99
-SEED = 0xc0ffee
-
-
-def set_random_seeds(env):
+def set_random_seeds(train_env, test_env, seed=0xc0ffee):
     """
     Set random seeds for reproducibility.
     """
-    env.seed(SEED)
-    random.seed(SEED)
+    train_env.seed(seed)
+    test_env.seed(seed)
+    random.seed(seed)
     torch.backends.cudnn.deterministic = True
-    torch.manual_seed(SEED)
+    torch.manual_seed(seed)
 
 def get_best_action(net, obs):
     """
     Return best action for given observation according to the neural network.
+    Best action has lower "Q" value since it estimates cumulative cost.
     """
     obs_left = torch.cat([torch.FloatTensor(obs), torch.FloatTensor([0])], 0)
     obs_right = torch.cat([torch.FloatTensor(obs), torch.FloatTensor([1])], 0)
@@ -43,33 +41,34 @@ def generate_rollout(env, net=None):
     done = False
     while not done:
         action = get_best_action(net, obs) if net else env.action_space.sample()
-        next_obs, rew, done, info = env.step(action)
-        rollout.append((obs, action, rew, next_obs, done))
+        next_obs, cost, done, _ = env.step(action)
+        rollout.append((obs, action, cost, next_obs, done))
         obs = next_obs
+
     return rollout
 
-def train(net, optimizer, rollout):
+def train(net, optimizer, rollout, gamma=0.95):
     """
     Train neural network with a given rollout.
     """
-    state_batch, action_batch, reward_batch, next_state_batch, done_batch = zip(*rollout)
+    state_batch, action_batch, cost_batch, next_state_batch, done_batch = zip(*rollout)
     state_batch = torch.FloatTensor(state_batch)
     action_batch = torch.FloatTensor(action_batch)
-    reward_batch = torch.FloatTensor(reward_batch)
+    cost_batch = torch.FloatTensor(cost_batch)
     next_state_batch = torch.FloatTensor(next_state_batch)
     done_batch = torch.FloatTensor(done_batch)
     
     state_action_batch = torch.cat([state_batch, action_batch.unsqueeze(1)], 1)
     predicted_q_values = net(state_action_batch).squeeze()
 
-    # Compute max_a Q(s', a)
+    # Compute min_a Q(s', a)
     q_next_state_left_batch = net(torch.cat([next_state_batch, torch.zeros(len(rollout), 1)], 1)).squeeze()
     q_next_state_right_batch = net(torch.cat([next_state_batch, torch.ones(len(rollout), 1)], 1)).squeeze()
     q_next_state_batch = torch.min(q_next_state_left_batch, q_next_state_right_batch)
 
     with torch.no_grad():
-        target_q_values = reward_batch + GAMMA * q_next_state_batch * (torch.FloatTensor(1) - done_batch)
-    
+        target_q_values = cost_batch + gamma * q_next_state_batch * (torch.FloatTensor(1) - done_batch)
+
     loss = F.mse_loss(predicted_q_values, target_q_values)
     
     optimizer.zero_grad()
@@ -95,33 +94,39 @@ def hint_to_goal(net, optimizer, factor=100):
 
 def test(env, net, episodes=1000):
     steps = 0
-    for episode in range(episodes):
+    nb_success = 0
+    for _ in range(episodes):
         obs = env.reset()
         done = False
 
         while not done:
             action = get_best_action(net, obs)
-            obs, rew, done, info = env.step(action)
+            obs, cost, done, info = env.step(action)
             steps += 1
 
+        nb_success += 1 if info['success'] else 0
+
     print('Average Number of Steps: ', float(steps) / episodes)
+    print('Success rate: ', float(nb_success) / episodes)
     env.close()
 
 def main():
-    env = envs.make_cartpole()
-    # set_random_seeds(env)
+    train_env = envs.make_cartpole(100)
+    test_env = envs.make_cartpole(3000)
+    # set_random_seeds(train_env, test_env)
 
     net = models.Net()
-    optimizer = optim.Rprop(net.parameters())    
+    optimizer = optim.Rprop(net.parameters())
+    # TODO Initialize weights randomly within [-0.5, 0.5]
 
     for epoch in range(500):
-        rollout = generate_rollout(env, net)
+        rollout = generate_rollout(train_env, net)
         if epoch % 10 == 9:
             print('Epoch {:4d} | Steps: {:3d}'.format(epoch + 1, len(rollout)))
         train(net, optimizer, rollout)
         hint_to_goal(net, optimizer)
 
-    test(env, net)
+    test(test_env, net)
 
 
 if __name__ == '__main__':

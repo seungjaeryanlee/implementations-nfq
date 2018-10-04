@@ -6,19 +6,21 @@ class RegulatorWrapper(gym.Wrapper):
         self.c_trans = c_trans
 
     def _step(self, action):
-        obs, reward, done, info = self.env.step(action)
+        obs, _, done, info = self.env.step(action)
         if -0.05 < obs[0] < 0.05:
-            reward = 0
+            cost = 0
+            success = True
         else:
-            reward = self.c_trans
+            cost = self.c_trans
+            success = False
+        info['success'] = success
 
-        return obs, reward, done, info
+        return obs, cost, done, info
 
 
-def make_cartpole():
+def make_cartpole(max_steps=100):
     env = gym.make('CartPole-v0')
-    env._max_episode_steps = 100
-    # env.spec.tags['wrapper_config.TimeLimit.max_episode_steps'] = 100
+    env._max_episode_steps = max_steps
     env = RegulatorWrapper(env)
 
     return env
