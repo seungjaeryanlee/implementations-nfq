@@ -28,7 +28,7 @@ def get_best_action(net, obs):
     q_left = net(obs_left)
     q_right = net(obs_right)
     action = 1 if q_left >= q_right else 0
-    
+
     return action
 
 def generate_rollout(env, net=None):
@@ -57,7 +57,7 @@ def train(net, optimizer, rollout, gamma=0.95):
     cost_batch = torch.FloatTensor(cost_batch)
     next_state_batch = torch.FloatTensor(next_state_batch)
     done_batch = torch.FloatTensor(done_batch)
-    
+
     state_action_batch = torch.cat([state_batch, action_batch.unsqueeze(1)], 1)
     predicted_q_values = net(state_action_batch).squeeze()
 
@@ -77,13 +77,13 @@ def train(net, optimizer, rollout, gamma=0.95):
 
 def hint_to_goal(net, optimizer, factor=100):
     """
-    Use hint-to-goal heuristic to clamp 
+    Use hint-to-goal heuristic to clamp network output.
     """
     for _ in range(factor):
-        state_action_pair = torch.FloatTensor([[random.random() * 0.025 - 0.5,
-                                                random.random(),
-                                                random.random() * 0.3 - 0.6,
-                                                random.random(),
+        state_action_pair = torch.FloatTensor([[random.random() * 0.1 - 0.05,
+                                                random.random() - 0.5,
+                                                random.random() * 0.6 - 0.3,
+                                                random.random() - 0.5,
                                                 random.randint(0, 1)]])
         predicted_q_value = net(state_action_pair).squeeze()
         loss = F.mse_loss(predicted_q_value, torch.zeros(1))
@@ -101,19 +101,18 @@ def test(env, net, episodes=1000):
 
         while not done:
             action = get_best_action(net, obs)
-            obs, cost, done, info = env.step(action)
+            obs, _, done, info = env.step(action)
             steps += 1
 
         nb_success += 1 if info['success'] else 0
 
     print('Average Number of Steps: ', float(steps) / episodes)
     print('Success rate: ', float(nb_success) / episodes)
-    env.close()
 
 def main():
     train_env = envs.make_cartpole(100)
     test_env = envs.make_cartpole(3000)
-    # set_random_seeds(train_env, test_env)
+    set_random_seeds(train_env, test_env)
 
     net = models.Net()
     optimizer = optim.Rprop(net.parameters())
@@ -125,9 +124,10 @@ def main():
             print('Epoch {:4d} | Steps: {:3d}'.format(epoch + 1, len(rollout)))
         train(net, optimizer, rollout)
         hint_to_goal(net, optimizer)
+        # test(test_env, net)
 
-    test(test_env, net)
-
+    train_env.close()
+    test_env.close()
 
 if __name__ == '__main__':
     main()
