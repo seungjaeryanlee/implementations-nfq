@@ -1,0 +1,10 @@
+black>=19.3b0
+flake8>=3.7.8
+flake8-bugbear>=19.3.0
+flake8-docstrings>=1.3.0
+isort>=4.3.21
+pytest>=5.0.1
+seed-isort-config>=1.9.2
+
+# https://github.com/PyCQA/pydocstyle/issues/375
+pydocstyle<4.0.0
