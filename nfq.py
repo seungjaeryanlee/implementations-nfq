@@ -6,7 +6,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 
 import envs
-import models
+from networks import NFQNetwork
 
 
 def set_random_seeds(train_env, test_env, seed=0xC0FFEE):
@@ -133,7 +133,7 @@ def main():
     test_env = envs.make_cartpole(3000)
     set_random_seeds(train_env, test_env)
 
-    net = models.Net()
+    net = NFQNetwork()
     optimizer = optim.Rprop(net.parameters())
     # TODO Initialize weights randomly within [-0.5, 0.5]
 
