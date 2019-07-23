@@ -60,6 +60,7 @@ class CartPoleRegulatorEnv(gym.Env):
         self.kinematics_integrator = 'euler'
 
         # Success state
+        # TODO(seungjaeryanlee): Verify pole angle success state
         self.theta_success_range = math.pi / 2
         self.x_success_range = 0.05
 

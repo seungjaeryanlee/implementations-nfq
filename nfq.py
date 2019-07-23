@@ -117,7 +117,7 @@ def hint_to_goal(net, optimizer, factor=100):
             # TODO(seungjaeryanlee): What is goal velocity?
             np.random.uniform(-0.05, 0.05),
             np.random.normal(),
-            np.random.uniform(-math.pi, math.pi),
+            np.random.uniform(-math.pi/2, math.pi/2),
             np.random.normal(),
             np.random.randint(2),
         ])
