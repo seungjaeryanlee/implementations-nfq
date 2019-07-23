@@ -101,6 +101,14 @@ def train(net, optimizer, rollout, gamma=0.95):
     with torch.no_grad():
         target_q_values = cost_batch + gamma * q_next_state_batch
 
+    # Variant 2: Clamp function to zero in goal region
+    goal_patterns = get_goal_patterns(net, optimizer, factor=100)
+    goal_patterns = torch.FloatTensor(goal_patterns)
+    predicted_goal_values = net(goal_patterns).squeeze()
+    goal_target = torch.FloatTensor([0] * 100)
+    predicted_q_values = torch.cat([predicted_q_values, predicted_goal_values], dim=0)
+    target_q_values = torch.cat([target_q_values, goal_target], dim=0)
+
     loss = F.mse_loss(predicted_q_values, target_q_values)
 
     optimizer.zero_grad()
@@ -108,12 +116,13 @@ def train(net, optimizer, rollout, gamma=0.95):
     optimizer.step()
 
 
-def hint_to_goal(net, optimizer, factor=100):
+def get_goal_patterns(net, optimizer, factor=100):
     """
     Use hint-to-goal heuristic to clamp network output.
     """
+    goal_patterns = []
     for _ in range(factor):
-        state_action_pair = torch.FloatTensor([
+        state_action_pair = np.array([
             # TODO(seungjaeryanlee): What is goal velocity?
             np.random.uniform(-0.05, 0.05),
             np.random.normal(),
@@ -121,14 +130,17 @@ def hint_to_goal(net, optimizer, factor=100):
             np.random.normal(),
             np.random.randint(2),
         ])
-        predicted_q_value = net(state_action_pair.flatten())
+        goal_patterns.append(state_action_pair)
 
-        # Target value of a goal state is 0
-        loss = F.mse_loss(predicted_q_value, torch.FloatTensor([0]))
+    return goal_patterns
+        # predicted_q_value = net(state_action_pair.flatten())
 
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+        # # Target value of a goal state is 0
+        # loss = F.mse_loss(predicted_q_value, torch.FloatTensor([0]))
+
+        # optimizer.zero_grad()
+        # loss.backward()
+        # optimizer.step()
 
 
 def test(env, net, episodes=1000):
@@ -172,7 +184,6 @@ def main():
 
         logger.info("Epoch {:4d} | TRAINING   | Steps: {:3d}".format(epoch, len(new_rollout)))
         train(net, optimizer, rollout)
-        hint_to_goal(net, optimizer)
         # avg_number_of_steps, success_rate = test(test_env, net)
         # logger.info("Epoch {:4d} | EVALUATION | AVG # Steps: {:3.3f} | Success: {:3.1f}%".format(epoch, avg_number_of_steps, success_rate))
 
