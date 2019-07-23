@@ -13,19 +13,28 @@ from networks import NFQNetwork
 from utils import make_reproducible, get_logger
 
 
-def get_best_action(net, obs):
+def get_best_action(q_net: nn.Module, obs: np.array) -> int:
     """
     Return best action for given observation according to the neural network.
-    Best action has lower "Q" value since it estimates cumulative cost.
+
+    Parameters
+    ----------
+    q_net : nn.Module
+        The Q-Network that returns estimated cost given observation and action.
+    obs : np.array
+        An observation to find the best action for.
+
+    Returns
+    -------
+    action : int
+        The action chosen by greedy selection.
+
     """
-    obs_left = torch.cat([torch.FloatTensor(obs), torch.FloatTensor([0])], 0)
-    obs_right = torch.cat([torch.FloatTensor(obs), torch.FloatTensor([1])], 0)
-    q_left = net(obs_left)
-    q_right = net(obs_right)
-    action = 1 if q_left >= q_right else 0
+    q_left = q_net(torch.cat([torch.FloatTensor(obs), torch.FloatTensor([0])], dim=0))
+    q_right = q_net(torch.cat([torch.FloatTensor(obs), torch.FloatTensor([1])], dim=0))
 
-    return action
-
+    # Best action has lower "Q" value since it estimates cumulative cost.
+    return 1 if q_left >= q_right else 0
 
 def generate_rollout(env, net=None, render=False):
     """
