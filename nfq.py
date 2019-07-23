@@ -1,4 +1,54 @@
 #!/usr/bin/env python
+"""Implement Neural Fitted Q-Iteration.
+
+http://ml.informatik.uni-freiburg.de/former/_media/publications/rieecml05.pdf
+
+
+Running
+-------
+You can train the NFQ agent on CartPole Regulator with the inluded
+configuration file with the below command:
+```
+python train_eval.py -c cartpole.conf
+```
+
+For a reproducible run, use the RANDOM_SEED flag.
+```
+python train_eval.py -c cartpole.conf --RANDOM_SEED=1
+```
+
+To save a trained agent, use the SAVE_PATH flag.
+```
+python train_eval.py -c cartpole.conf --SAVE_PATH=saves/cartpole.pth
+```
+
+To load a trained agent, use the LOAD_PATH flag.
+```
+python train_eval.py -c cartpole.conf --LOAD_PATH=saves/cartpole.pth
+```
+
+To enable logging to TensorBoard or W&B, use appropriate flags.
+```
+python train_eval.py -c cartpole.conf --USE_TENSORBOARD --USE_WANDB
+```
+
+
+Logging
+-------
+1. You can view runs online via Weights & Biases (wandb):
+https://app.wandb.ai/seungjaeryanlee/implementations-nfq/runs
+
+2. You can use TensorBoard to view runs offline:
+```
+tensorboard --logdir=tensorboard_logs --port=2223
+```
+
+
+Glossary
+--------
+env : Environment
+obs : Observation
+"""
 import math
 from typing import List, Tuple
 
@@ -139,6 +189,7 @@ def get_goal_patterns(nfq_net, optimizer, factor=100):
 
 
 def test(env, nfq_net, episodes=1):
+    """Test NFQ agent on test environment."""
     steps = 0
     nb_success = 0
     for _ in range(episodes):
@@ -159,6 +210,7 @@ def test(env, nfq_net, episodes=1):
 
 
 def main():
+    """Run NFQ."""
     # Setup hyperparameters
     parser = configargparse.ArgParser()
     parser.add("-c", "--config", required=True, is_config_file=True)
