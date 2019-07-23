@@ -2,6 +2,7 @@
 import math
 from typing import List, Tuple
 
+import configargparse
 import gym
 import numpy as np
 import torch
@@ -158,33 +159,63 @@ def test(env, nfq_net, episodes=1):
 
 
 def main():
+    # Setup hyperparameters
+    parser = configargparse.ArgParser()
+    parser.add("-c", "--config", required=True, is_config_file=True)
+    parser.add("--EPOCH", dest="EPOCH", type=int)
+    parser.add("--TRAIN_ENV_MAX_STEPS", dest="TRAIN_ENV_MAX_STEPS", type=int)
+    parser.add("--TEST_ENV_MAX_STEPS", dest="TEST_ENV_MAX_STEPS", type=int)
+    parser.add("--DISCOUNT", dest="DISCOUNT", type=float)
+    parser.add("--RANDOM_SEED", dest="RANDOM_SEED", type=int)
+    parser.add("--SAVE_PATH", dest="SAVE_PATH", type=str, default="")
+    parser.add("--LOAD_PATH", dest="LOAD_PATH", type=str, default="")
+    parser.add("--USE_TENSORBOARD", dest="USE_TENSORBOARD", action="store_true")
+    parser.add("--USE_WANDB", dest="USE_WANDB", action="store_true")
+    CONFIG = parser.parse_args()
+    if not hasattr(CONFIG, "USE_TENSORBOARD"):
+        CONFIG.USE_TENSORBOARD = False
+    if not hasattr(CONFIG, "USE_WANDB"):
+        CONFIG.USE_WANDB = False
+
+    print()
+    print("+--------------------------------+--------------------------------+")
+    print("| Hyperparameters                | Value                          |")
+    print("+--------------------------------+--------------------------------+")
+    for arg in vars(CONFIG):
+        print("| {:30} | {:<30} |".format(arg, getattr(CONFIG, arg) if getattr(CONFIG, arg) is not None else ""))
+    print("+--------------------------------+--------------------------------+")
+    print()
+
     logger = get_logger()
-    SEED = 0xC0FFEE
-    make_reproducible(SEED, use_random=True, use_numpy=True, use_torch=True)
 
     train_env = CartPoleRegulatorEnv(mode="train")
     test_env = CartPoleRegulatorEnv(mode="test")
-    train_env.seed(SEED)
-    test_env.seed(SEED)
+
+    if CONFIG.RANDOM_SEED is not None:
+        make_reproducible(CONFIG.RANDOM_SEED, use_random=True, use_numpy=True, use_torch=True)
+        train_env.seed(CONFIG.RANDOM_SEED)
+        test_env.seed(CONFIG.RANDOM_SEED)
+    else:
+        logger.warning("Running without a random seed: this run is NOT reproducible.")
 
     nfq_net = NFQNetwork()
     optimizer = optim.Rprop(nfq_net.parameters())
 
     rollout = []
-    for epoch in range(500 + 1):
+    for epoch in range(CONFIG.EPOCH + 1):
         # Variant 1: Incermentally add transitions (Section 3.4)
         new_rollout = generate_rollout(train_env, nfq_net, render=False)
         rollout.extend(new_rollout)
 
         logger.info(
-            "Epoch {:4d} | TRAINING   | Steps: {:3d}".format(epoch, len(new_rollout))
+            "Epoch {:4d} | TRAINING   | Steps: {:4d}".format(epoch, len(new_rollout))
         )
         train(nfq_net, optimizer, rollout)
 
         # Test on 3000-step environment
         number_of_steps, _ = test(test_env, nfq_net, episodes=1)
         logger.info(
-            "Epoch {:4d} | EVALUATION | Steps: {:3d}".format(
+            "Epoch {:4d} | EVALUATION | Steps: {:4d}".format(
                 epoch, int(number_of_steps),
             )
         )
