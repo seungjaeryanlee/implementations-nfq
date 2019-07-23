@@ -2,10 +2,10 @@
 
 TODO UPDATE STATUS BADGES
 
-[![black Build Status](https://img.shields.io/travis/com/seungjaeryanlee/implementations.svg?label=black)](https://travis-ci.com/seungjaeryanlee/implementations-dqn)
-[![flake8 Build Status](https://img.shields.io/travis/com/seungjaeryanlee/implementations.svg?label=flake8)](https://travis-ci.com/seungjaeryanlee/implementations-dqn)
-[![isort Build Status](https://img.shields.io/travis/com/seungjaeryanlee/implementations.svg?label=isort)](https://travis-ci.com/seungjaeryanlee/implementations-dqn)
-[![pytest Build Status](https://img.shields.io/travis/com/seungjaeryanlee/implementations.svg?label=pytest)](https://travis-ci.com/seungjaeryanlee/implementations-dqn)
+[![black Build Status](https://img.shields.io/travis/com/seungjaeryanlee/implementations-nfq.svg?label=black)](https://travis-ci.com/seungjaeryanlee/implementations-nfq)
+[![flake8 Build Status](https://img.shields.io/travis/com/seungjaeryanlee/implementations-nfq.svg?label=flake8)](https://travis-ci.com/seungjaeryanlee/implementations-nfq)
+[![isort Build Status](https://img.shields.io/travis/com/seungjaeryanlee/implementations-nfq.svg?label=isort)](https://travis-ci.com/seungjaeryanlee/implementations-nfq)
+[![pytest Build Status](https://img.shields.io/travis/com/seungjaeryanlee/implementations-nfq.svg?label=pytest)](https://travis-ci.com/seungjaeryanlee/implementations-nfq)
 
 This repository is a implementation of the paper [TODO PAPER TITLE](TODO LINK TO PAPER).
 
