@@ -124,7 +124,7 @@ class CartPoleRegulatorEnv(gym.Env):
         if (x < -self.x_threshold or x > self.x_threshold
             or theta < -self.theta_threshold_radians or theta > self.theta_threshold_radians):
             done = True
-            cost = -1
+            cost = 1
             info = { "state": "failure" }
         # Success State
         elif (-self.x_success_range < x < self.x_success_range

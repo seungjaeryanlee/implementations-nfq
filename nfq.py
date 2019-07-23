@@ -113,19 +113,17 @@ def hint_to_goal(net, optimizer, factor=100):
     Use hint-to-goal heuristic to clamp network output.
     """
     for _ in range(factor):
-        state_action_pair = torch.FloatTensor(
-            [
-                # TODO(seungjaeryanlee): What is goal velocity?
-                [
-                    np.random.uniform(-0.05, 0.05),
-                    np.random.normal(),
-                    np.random.uniform(-math.pi, math.pi),
-                    np.random.normal(),
-                    random.randint(0, 1),
-                ]
-            ]
-        )
+        state_action_pair = torch.FloatTensor([
+            # TODO(seungjaeryanlee): What is goal velocity?
+            np.random.uniform(-0.05, 0.05),
+            np.random.normal(),
+            np.random.uniform(-math.pi, math.pi),
+            np.random.normal(),
+            np.random.randint(2),
+        ])
         predicted_q_value = net(state_action_pair.flatten())
+
+        # Target value of a goal state is 0
         loss = F.mse_loss(predicted_q_value, torch.FloatTensor([0]))
 
         optimizer.zero_grad()
