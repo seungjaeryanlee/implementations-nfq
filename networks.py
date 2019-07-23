@@ -16,6 +16,14 @@ class NFQNetwork(nn.Module):
             nn.Sigmoid(),
         )
 
+        # Initialize weights to [-0.5, 0.5]
+        def init_weights(m):
+            if type(m) == nn.Linear:
+                torch.nn.init.uniform_(m.weight, -0.5, 0.5)
+                # TODO(seungjaeryanlee): What about bias?
+                torch.nn.init.constant_(m.weight, 0)
+        self.layers.apply(init_weights)
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         Forward propagation.
