@@ -137,7 +137,7 @@ def get_goal_patterns(nfq_net, optimizer, factor=100):
     return goal_patterns
 
 
-def test(env, nfq_net, episodes=1000):
+def test(env, nfq_net, episodes=1):
     steps = 0
     nb_success = 0
     for _ in range(episodes):
@@ -180,12 +180,17 @@ def main():
             "Epoch {:4d} | TRAINING   | Steps: {:3d}".format(epoch, len(new_rollout))
         )
         train(nfq_net, optimizer, rollout)
-        # avg_number_of_steps, success_rate = test(test_env, nfq_net)
-        # logger.info(
-        #     "Epoch {:4d} | EVALUATION | AVG # Steps: {:3.3f} | Success: {:3.1f}%".format(
-        #         epoch, avg_number_of_steps, success_rate
-        #     )
-        # )
+
+        # Test on 3000-step environment
+        number_of_steps, _ = test(test_env, nfq_net, episodes=1)
+        logger.info(
+            "Epoch {:4d} | EVALUATION | Steps: {:3d}".format(
+                epoch, int(number_of_steps),
+            )
+        )
+
+        if number_of_steps == 3000:
+            break
 
     train_env.close()
     test_env.close()
