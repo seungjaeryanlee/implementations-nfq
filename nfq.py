@@ -182,17 +182,35 @@ def main():
     print("| Hyperparameters                | Value                          |")
     print("+--------------------------------+--------------------------------+")
     for arg in vars(CONFIG):
-        print("| {:30} | {:<30} |".format(arg, getattr(CONFIG, arg) if getattr(CONFIG, arg) is not None else ""))
+        print(
+            "| {:30} | {:<30} |".format(
+                arg, getattr(CONFIG, arg) if getattr(CONFIG, arg) is not None else ""
+            )
+        )
     print("+--------------------------------+--------------------------------+")
     print()
 
+    # Log to File, Console, TensorBoard, W&B
     logger = get_logger()
 
+    if CONFIG.USE_TENSORBOARD:
+        from torch.utils.tensorboard import SummaryWriter
+
+        writer = SummaryWriter(log_dir="tensorboard_logs")
+    if CONFIG.USE_WANDB:
+        import wandb
+
+        wandb.init(project="implementations-nfq", config=CONFIG)
+
+    # Setup environment
     train_env = CartPoleRegulatorEnv(mode="train")
     test_env = CartPoleRegulatorEnv(mode="test")
 
+    # Fix random seeds
     if CONFIG.RANDOM_SEED is not None:
-        make_reproducible(CONFIG.RANDOM_SEED, use_random=True, use_numpy=True, use_torch=True)
+        make_reproducible(
+            CONFIG.RANDOM_SEED, use_random=True, use_numpy=True, use_torch=True
+        )
         train_env.seed(CONFIG.RANDOM_SEED)
         test_env.seed(CONFIG.RANDOM_SEED)
     else:
@@ -210,15 +228,25 @@ def main():
         logger.info(
             "Epoch {:4d} | TRAINING   | Steps: {:4d}".format(epoch, len(new_rollout))
         )
+        if CONFIG.USE_TENSORBOARD:
+            writer.add_scalar("train/episode_length", len(new_rollout), epoch)
+        if CONFIG.USE_WANDB:
+            wandb.log({"Train Episode Length": len(new_rollout)}, step=epoch)
+
+        # Train from all past experience
         train(nfq_net, optimizer, rollout)
 
         # Test on 3000-step environment
         number_of_steps, _ = test(test_env, nfq_net, episodes=1)
         logger.info(
-            "Epoch {:4d} | EVALUATION | Steps: {:4d}".format(
-                epoch, int(number_of_steps),
+            "Epoch {:4d} | TEST       | Steps: {:4d}".format(
+                epoch, int(number_of_steps)
             )
         )
+        if CONFIG.USE_TENSORBOARD:
+            writer.add_scalar("test/episode_length", int(number_of_steps), epoch)
+        if CONFIG.USE_WANDB:
+            wandb.log({"Test Episode Length": int(number_of_steps)}, step=epoch)
 
         if number_of_steps == 3000:
             break
