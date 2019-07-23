@@ -160,7 +160,7 @@ def test(env, nfq_net, episodes=1000):
 def main():
     logger = get_logger()
     SEED = 0xC0FFEE
-    make_reproducible(SEED, use_random=True, use_torch=True)
+    make_reproducible(SEED, use_random=True, use_numpy=True, use_torch=True)
 
     train_env = CartPoleRegulatorEnv(mode="train")
     test_env = CartPoleRegulatorEnv(mode="test")
