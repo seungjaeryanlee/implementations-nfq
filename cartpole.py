@@ -10,7 +10,7 @@ from gym import spaces, logger
 from gym.utils import seeding
 import numpy as np
 
-class CartPoleEnv(gym.Env):
+class CartPoleRegulatorEnv(gym.Env):
     """
     Description:
         A pole is attached by an un-actuated joint to a cart, which moves along a frictionless track. The pendulum starts upright, and the goal is to prevent it from falling over by increasing and reducing the cart's velocity.
@@ -48,7 +48,7 @@ class CartPoleEnv(gym.Env):
         'video.frames_per_second' : 50
     }
 
-    def __init__(self):
+    def __init__(self, mode="train"):
         self.gravity = 9.8
         self.masscart = 1.0
         self.masspole = 0.1
@@ -59,9 +59,20 @@ class CartPoleEnv(gym.Env):
         self.tau = 0.02  # seconds between state updates
         self.kinematics_integrator = 'euler'
 
-        # Angle at which to fail the episode
-        self.theta_threshold_radians = 12 * 2 * math.pi / 360
+        # Success state
+        self.theta_success_range = math.pi / 2
+        self.x_success_range = 0.05
+
+        # Failure state description
+        # TODO(seungjaeryanlee): Verify pole angle threshold
+        self.theta_threshold_radians = math.pi / 2
         self.x_threshold = 2.4
+
+        self.c_trans = 0.01
+
+        assert mode in ["train", "test"]
+        self.mode = mode
+        self.max_steps = 100 if mode == "train" else 3000
 
         # Angle limit set to 2 * theta_threshold_radians so failing observation is still within bounds
         high = np.array([
@@ -77,15 +88,11 @@ class CartPoleEnv(gym.Env):
         self.viewer = None
         self.state = None
 
-        self.steps_beyond_done = None
-
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
 
-    def step(self, action):
-        assert self.action_space.contains(action), "%r (%s) invalid"%(action, type(action))
-        state = self.state
+    def _compute_next_state(self, state, action):
         x, x_dot, theta, theta_dot = state
         force = self.force_mag if action==1 else -self.force_mag
         costheta = math.cos(theta)
@@ -103,30 +110,46 @@ class CartPoleEnv(gym.Env):
             x  = x + self.tau * x_dot
             theta_dot = theta_dot + self.tau * thetaacc
             theta = theta + self.tau * theta_dot
-        self.state = (x,x_dot,theta,theta_dot)
-        done =  x < -self.x_threshold \
-                or x > self.x_threshold \
-                or theta < -self.theta_threshold_radians \
-                or theta > self.theta_threshold_radians
-        done = bool(done)
 
-        if not done:
-            reward = 1.0
-        elif self.steps_beyond_done is None:
-            # Pole just fell!
-            self.steps_beyond_done = 0
-            reward = 1.0
+        return x, x_dot, theta, theta_dot
+
+    def step(self, action):
+        assert self.action_space.contains(action), "%r (%s) invalid"%(action, type(action))
+        self.state = self._compute_next_state(self.state, action)
+        x, _, theta, _ = self.state
+
+        self.episode_step += 1
+
+        # Failure State
+        if (x < -self.x_threshold or x > self.x_threshold
+            or theta < -self.theta_threshold_radians or theta > self.theta_threshold_radians):
+            done = True
+            cost = -1
+            info = { "state": "failure" }
+        # Success State
+        elif (-self.x_success_range < x < self.x_success_range
+              and -self.theta_success_range < theta < self.theta_success_range):
+            done = False
+            cost = 0
+            info = { "state": "success" }
         else:
-            if self.steps_beyond_done == 0:
-                logger.warn("You are calling 'step()' even though this environment has already returned done = True. You should always call 'reset()' once you receive 'done = True' -- any further steps are undefined behavior.")
-            self.steps_beyond_done += 1
-            reward = 0.0
+            done = False
+            cost = self.c_trans
+            info = { "state": "neither" }
 
-        return np.array(self.state), reward, done, {}
+        # Check for time limit
+        done |= (self.episode_step >= self.max_steps)
+
+        return np.array(self.state), cost, done, info
 
     def reset(self):
-        self.state = self.np_random.uniform(low=-0.05, high=0.05, size=(4,))
-        self.steps_beyond_done = None
+        if self.mode == "train":
+            self.state = self.np_random.uniform(low=[-2.3, 0, -0.3, 0], high=[2.3, 0, 0.3, 0], size=(4,))
+        else:
+            self.state = self.np_random.uniform(low=[-1, 0, -0.3, 0], high=[1, 0, 0.3, 0], size=(4,))
+
+        self.episode_step = 0
+
         return np.array(self.state)
 
     def render(self, mode='human'):

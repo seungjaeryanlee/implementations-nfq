@@ -1,11 +1,14 @@
 #!/usr/bin/env python
 import random
+import math
+
+import numpy as np
 
 import torch
 import torch.nn.functional as F
 import torch.optim as optim
 
-import envs
+from cartpole import CartPoleRegulatorEnv
 from networks import NFQNetwork
 from utils import make_reproducible, get_logger
 
@@ -24,7 +27,7 @@ def get_best_action(net, obs):
     return action
 
 
-def generate_rollout(env, net=None):
+def generate_rollout(env, net=None, render=False):
     """
     Generate rollout using given neural network. If a network is not given,
     generate random rollout instead.
@@ -37,6 +40,9 @@ def generate_rollout(env, net=None):
         next_obs, cost, done, _ = env.step(action)
         rollout.append((obs, action, cost, next_obs, done))
         obs = next_obs
+
+        if render:
+            env.render()
 
     return rollout
 
@@ -64,10 +70,9 @@ def train(net, optimizer, rollout, gamma=0.95):
     ).squeeze()
     q_next_state_batch = torch.min(q_next_state_left_batch, q_next_state_right_batch)
 
+    # TODO(seungjaeryanlee): Done mask not mentioned in paper, but should I add it?
     with torch.no_grad():
-        target_q_values = cost_batch + gamma * q_next_state_batch * (
-            1 - done_batch
-        )
+        target_q_values = cost_batch + gamma * q_next_state_batch
 
     loss = F.mse_loss(predicted_q_values, target_q_values)
 
@@ -83,17 +88,18 @@ def hint_to_goal(net, optimizer, factor=100):
     for _ in range(factor):
         state_action_pair = torch.FloatTensor(
             [
+                # TODO(seungjaeryanlee): What is goal velocity?
                 [
-                    random.random() * 0.1 - 0.05,
-                    random.random() - 0.5,
-                    random.random() * 0.6 - 0.3,
-                    random.random() - 0.5,
+                    np.random.uniform(-0.05, 0.05),
+                    np.random.normal(),
+                    np.random.uniform(-math.pi, math.pi),
+                    np.random.normal(),
                     random.randint(0, 1),
                 ]
             ]
         )
-        predicted_q_value = net(state_action_pair).squeeze()
-        loss = F.mse_loss(predicted_q_value, torch.tensor(0).float())
+        predicted_q_value = net(state_action_pair.flatten())
+        loss = F.mse_loss(predicted_q_value, torch.FloatTensor([0]))
 
         optimizer.zero_grad()
         loss.backward()
@@ -112,7 +118,7 @@ def test(env, net, episodes=1000):
             obs, _, done, info = env.step(action)
             steps += 1
 
-        nb_success += 1 if info["success"] else 0
+        nb_success += 1 if info["state"] == "success" else 0
 
     avg_number_of_steps = float(steps) / episodes
     success_rate = float(nb_success) / episodes
@@ -124,8 +130,8 @@ def main():
     logger = get_logger()
     make_reproducible(0xC0FFEE, use_random=True, use_torch=True)
 
-    train_env = envs.make_cartpole(100)
-    test_env = envs.make_cartpole(3000)
+    train_env = CartPoleRegulatorEnv(mode="train")
+    test_env = CartPoleRegulatorEnv(mode="test")
     train_env.seed(0xC0FFEE)
     test_env.seed(0xC0FFEE)
 
@@ -134,13 +140,13 @@ def main():
     # TODO Initialize weights randomly within [-0.5, 0.5]
 
     for epoch in range(500+1):
-        rollout = generate_rollout(train_env, net)
+        rollout = generate_rollout(train_env, net, render=False)
         
         logger.info("Epoch {:4d} | TRAINING   | Steps: {:3d}".format(epoch, len(rollout)))
         train(net, optimizer, rollout)
         hint_to_goal(net, optimizer)
-        avg_number_of_steps, success_rate = test(test_env, net)
-        logger.info("Epoch {:4d} | EVALUATION | AVG # Steps: {:3.3f} | Success: {:3.1f}%".format(epoch, avg_number_of_steps, success_rate))
+        # avg_number_of_steps, success_rate = test(test_env, net)
+        # logger.info("Epoch {:4d} | EVALUATION | AVG # Steps: {:3.3f} | Success: {:3.1f}%".format(epoch, avg_number_of_steps, success_rate))
 
     train_env.close()
     test_env.close()
