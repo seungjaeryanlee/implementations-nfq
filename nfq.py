@@ -1,10 +1,14 @@
 #!/usr/bin/env python
 import random
 import math
+from typing import List, Tuple
 
 import numpy as np
 
+import gym
+
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
@@ -36,16 +40,30 @@ def get_best_action(q_net: nn.Module, obs: np.array) -> int:
     # Best action has lower "Q" value since it estimates cumulative cost.
     return 1 if q_left >= q_right else 0
 
-def generate_rollout(env, net=None, render=False):
+def generate_rollout(env: gym.Env, q_net: nn.Module=None, render: bool=False) -> List[Tuple[np.array, int, int, np.array, bool]]:
     """
     Generate rollout using given neural network. If a network is not given,
     generate random rollout instead.
+
+    Parameters
+    ----------
+    env : gym.Env
+        The environment to generate rollout from.
+    q_net : nn.Module
+        The Q-Network that returns estimated cost given observation and action.
+    render: bool
+        If true, render environment.
+    
+    Returns
+    -------
+    rollout : List of Tuple
+        Generated rollout.
     """
     rollout = []
     obs = env.reset()
     done = False
     while not done:
-        action = get_best_action(net, obs) if net else env.action_space.sample()
+        action = get_best_action(q_net, obs) if q_net else env.action_space.sample()
         next_obs, cost, done, _ = env.step(action)
         rollout.append((obs, action, cost, next_obs, done))
         obs = next_obs
