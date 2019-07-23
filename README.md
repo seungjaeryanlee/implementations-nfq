@@ -11,9 +11,15 @@ For implementations of other deep learning papers, check the centralized [implem
 
 ### Summary 📝
 
+Neural Fitted Q-Iteration used a deep neural network for a Q-network, with its input being observation (s) and action (a) and its output being its action value (Q(s, a)). Instead of online Q-learning, the paper proposes **batch offline updates** by collecting experience throughout the episode and updating with that batch. The paper also suggests **hint-to-goal** method, where the neural network is trained explicitly in goal regions so that it can correctly estimate the value of the goal region.
+
 ### Results 📊
 
 This repository uses **TensorBoard** for offline logging and **Weights & Biases** for online logging. You can see the all the metrics in [my summary report at Weights & Biases](https://app.wandb.ai/seungjaeryanlee/implementations-nfq/reports?view=seungjaeryanlee%2FSummary)!
+
+| | |
+|-|-|
+| ![Test Episode Length](https://user-images.githubusercontent.com/6107926/61712085-83d23c80-ad90-11e9-9e11-326e0ab618ef.png) | ![Train Episode Length](https://user-images.githubusercontent.com/6107926/61712087-83d23c80-ad90-11e9-92be-1c43255da327.png) |
 
 ### Installation 🧱
 
