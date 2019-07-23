@@ -166,10 +166,13 @@ def main():
     optimizer = optim.Rprop(net.parameters())
     # TODO Initialize weights randomly within [-0.5, 0.5]
 
+    rollout = []
     for epoch in range(500+1):
-        rollout = generate_rollout(train_env, net, render=False)
-        
-        logger.info("Epoch {:4d} | TRAINING   | Steps: {:3d}".format(epoch, len(rollout)))
+        # Variant 1: Incermentally add transitions (Section 3.4)
+        new_rollout = generate_rollout(train_env, net, render=False)
+        rollout.extend(new_rollout)
+
+        logger.info("Epoch {:4d} | TRAINING   | Steps: {:3d}".format(epoch, len(new_rollout)))
         train(net, optimizer, rollout)
         hint_to_goal(net, optimizer)
         # avg_number_of_steps, success_rate = test(test_env, net)
