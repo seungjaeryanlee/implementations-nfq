@@ -50,6 +50,7 @@ env : Environment
 obs : Observation
 """
 import math
+import os
 from typing import List, Tuple
 
 import configargparse
@@ -268,8 +269,15 @@ def main():
     else:
         logger.warning("Running without a random seed: this run is NOT reproducible.")
 
+    # Setup agent
     nfq_net = NFQNetwork()
     optimizer = optim.Rprop(nfq_net.parameters())
+
+    # Load trained agent
+    if CONFIG.LOAD_PATH:
+        state_dict = torch.load(CONFIG.LOAD_PATH)
+        nfq_net.load_state_dict(state_dict["nfq_net"])
+        optimizer.load_state_dict(state_dict["optimizer"])
 
     rollout = []
     for epoch in range(CONFIG.EPOCH + 1):
@@ -302,6 +310,18 @@ def main():
 
         if number_of_steps == 3000:
             break
+
+    # Save trained agent
+    if CONFIG.SAVE_PATH:
+        # Create specified directory if it does not exist yet
+        SAVE_DIRECTORY = "/".join(CONFIG.SAVE_PATH.split("/")[:-1])
+        if not os.path.exists(SAVE_DIRECTORY):
+            os.makedirs(SAVE_DIRECTORY)
+
+        torch.save(
+            {"nfq_net": nfq_net.state_dict(), "optimizer": optimizer.state_dict()},
+            CONFIG.SAVE_PATH,
+        )
 
     train_env.close()
     test_env.close()
