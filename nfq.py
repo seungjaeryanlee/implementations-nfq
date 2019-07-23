@@ -7,17 +7,7 @@ import torch.optim as optim
 
 import envs
 from networks import NFQNetwork
-
-
-def set_random_seeds(train_env, test_env, seed=0xC0FFEE):
-    """
-    Set random seeds for reproducibility.
-    """
-    train_env.seed(seed)
-    test_env.seed(seed)
-    random.seed(seed)
-    torch.backends.cudnn.deterministic = True
-    torch.manual_seed(seed)
+from utils import make_reproducible, get_logger
 
 
 def get_best_action(net, obs):
@@ -76,7 +66,7 @@ def train(net, optimizer, rollout, gamma=0.95):
 
     with torch.no_grad():
         target_q_values = cost_batch + gamma * q_next_state_batch * (
-            torch.FloatTensor(1) - done_batch
+            1 - done_batch
         )
 
     loss = F.mse_loss(predicted_q_values, target_q_values)
@@ -103,7 +93,7 @@ def hint_to_goal(net, optimizer, factor=100):
             ]
         )
         predicted_q_value = net(state_action_pair).squeeze()
-        loss = F.mse_loss(predicted_q_value, torch.zeros(1))
+        loss = F.mse_loss(predicted_q_value, torch.tensor(0).float())
 
         optimizer.zero_grad()
         loss.backward()
@@ -124,26 +114,33 @@ def test(env, net, episodes=1000):
 
         nb_success += 1 if info["success"] else 0
 
-    print("Average Number of Steps: ", float(steps) / episodes)
-    print("Success rate: ", float(nb_success) / episodes)
+    avg_number_of_steps = float(steps) / episodes
+    success_rate = float(nb_success) / episodes
+
+    return avg_number_of_steps, success_rate
 
 
 def main():
+    logger = get_logger()
+    make_reproducible(0xC0FFEE, use_random=True, use_torch=True)
+
     train_env = envs.make_cartpole(100)
     test_env = envs.make_cartpole(3000)
-    set_random_seeds(train_env, test_env)
+    train_env.seed(0xC0FFEE)
+    test_env.seed(0xC0FFEE)
 
     net = NFQNetwork()
     optimizer = optim.Rprop(net.parameters())
     # TODO Initialize weights randomly within [-0.5, 0.5]
 
-    for epoch in range(500):
+    for epoch in range(500+1):
         rollout = generate_rollout(train_env, net)
-        if epoch % 10 == 9:
-            print("Epoch {:4d} | Steps: {:3d}".format(epoch + 1, len(rollout)))
+        
+        logger.info("Epoch {:4d} | TRAINING   | Steps: {:3d}".format(epoch, len(rollout)))
         train(net, optimizer, rollout)
         hint_to_goal(net, optimizer)
-        # test(test_env, net)
+        avg_number_of_steps, success_rate = test(test_env, net)
+        logger.info("Epoch {:4d} | EVALUATION | AVG # Steps: {:3.3f} | Success: {:3.1f}%".format(epoch, avg_number_of_steps, success_rate))
 
     train_env.close()
     test_env.close()
