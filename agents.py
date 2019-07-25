@@ -127,8 +127,8 @@ class NFQAgent:
         -------
         steps : int
             Number of steps the agent took.
-        state : str
-            How the agent finished the episode. "success" or "failure"
+        success : bool
+            True if the agent was terminated due to max timestep.
 
         """
         steps = 0
@@ -140,4 +140,4 @@ class NFQAgent:
             obs, _, done, info = eval_env.step(action)
             steps += 1
 
-        return steps, info["state"]
+        return steps, steps == eval_env.max_steps

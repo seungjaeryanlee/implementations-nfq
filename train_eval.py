@@ -196,7 +196,7 @@ def main():
             wandb.log({"Train Episode Length": len(new_rollout)}, step=epoch)
             wandb.log({"Evaluation Episode Length": eval_score}, step=epoch)
 
-        if eval_success == "success":
+        if eval_success:
             break
 
     # Save trained agent
