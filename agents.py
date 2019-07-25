@@ -95,9 +95,9 @@ class NFQAgent:
             q_next_state_left_batch, q_next_state_right_batch
         )
 
-        # TODO(seungjaeryanlee): Done mask not mentioned in paper, but should I add it?
+        # NOTE(seungjaeryanlee): Done mask not mentioned in paper
         with torch.no_grad():
-            target_q_values = cost_batch + gamma * q_next_state_batch
+            target_q_values = cost_batch + gamma * q_next_state_batch * (1 - done_batch)
 
         # Variant 2: Clamp function to zero in goal region
         goal_patterns = self.get_goal_patterns(factor=100)
