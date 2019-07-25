@@ -1,6 +1,8 @@
 """Reinforcement learning agents."""
 import math
+from typing import Tuple
 
+import gym
 import numpy as np
 import torch
 import torch.nn as nn
@@ -113,22 +115,29 @@ class NFQAgent:
         loss.backward()
         self._optimizer.step()
 
-    def evaluate(self, eval_env, episodes=1):
-        """Evaluate NFQ agent on evaluation environment."""
+    def evaluate(self, eval_env: gym.Env) -> Tuple[int, str]:
+        """Evaluate NFQ agent on evaluation environment.
+
+        Parameters
+        ----------
+        eval_env : gym.Env
+            Environment to evaluate the agent.
+
+        Returns
+        -------
+        steps : int
+            Number of steps the agent took.
+        state : str
+            How the agent finished the episode. "success" or "failure"
+
+        """
         steps = 0
-        nb_success = 0
-        for _ in range(episodes):
-            obs = eval_env.reset()
-            done = False
+        obs = eval_env.reset()
+        done = False
 
-            while not done:
-                action = self.get_best_action(obs)
-                obs, _, done, info = eval_env.step(action)
-                steps += 1
+        while not done:
+            action = self.get_best_action(obs)
+            obs, _, done, info = eval_env.step(action)
+            steps += 1
 
-            nb_success += 1 if info["state"] == "success" else 0
-
-        avg_number_of_steps = float(steps) / episodes
-        success_rate = float(nb_success) / episodes
-
-        return avg_number_of_steps, success_rate
+        return steps, info["state"]

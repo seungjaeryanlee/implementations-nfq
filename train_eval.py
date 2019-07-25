@@ -187,7 +187,7 @@ def main():
             wandb.log({"Train Episode Length": len(new_rollout)}, step=epoch)
 
         nfq_agent.train(rollout)
-        number_of_steps, _ = nfq_agent.evaluate(eval_env, episodes=1)
+        number_of_steps, _ = nfq_agent.evaluate(eval_env)
 
         logger.info(
             "Epoch {:4d} | Rollout Steps: {:4d} | Evaluation Steps: {:4d}".format(
