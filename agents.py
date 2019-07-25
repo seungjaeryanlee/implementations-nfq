@@ -1,6 +1,6 @@
 """Reinforcement learning agents."""
 import math
-from typing import Tuple
+from typing import List, Tuple
 
 import gym
 import numpy as np
@@ -52,11 +52,24 @@ class NFQAgent:
         return 1 if q_left >= q_right else 0
 
     # TODO(seungjaeryanlee): Move to environment
-    def get_goal_patterns(self, factor=100):
-        """Use hint-to-goal heuristic to clamp network output."""
-        goal_patterns = []
-        for _ in range(factor):
-            state_action_pair = np.array(
+    def get_goal_pattern_set(
+        self, size: int = 100
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Use hint-to-goal heuristic to clamp network output.
+
+        Parameters
+        ----------
+        size : int
+            The size of the goal pattern set to generate.
+
+        Returns
+        -------
+        pattern_set : tuple of torch.Tensor
+            Pattern set to train the NFQ network.
+
+        """
+        goal_state_action_b = [
+            np.array(
                 [
                     # TODO(seungjaeryanlee): What is goal velocity?
                     np.random.uniform(-0.05, 0.05),
@@ -66,13 +79,32 @@ class NFQAgent:
                     np.random.randint(2),
                 ]
             )
-            goal_patterns.append(state_action_pair)
+            for _ in range(size)
+        ]
+        goal_target_q_values = [0] * size
 
-        return goal_patterns
+        return goal_state_action_b, goal_target_q_values
 
-    # NOTE(seungjaeryanlee): Returns prediction instead of state-action tuple in paper
-    def generate_pattern_set(self, rollouts, gamma=0.95):
-        """Generate pattern set."""
+    def generate_pattern_set(
+        self,
+        rollouts: List[Tuple[np.array, int, int, np.array, bool]],
+        gamma: float = 0.95,
+    ):
+        """Generate pattern set.
+
+        Parameters
+        ----------
+        rollouts : list of tuple
+            Generated rollouts, which is a tuple of state, action, cost, next state, and done.
+        gamma : float
+            Discount factor. Defaults to 0.95.
+
+        Returns
+        -------
+        pattern_set : tuple of torch.Tensor
+            Pattern set to train the NFQ network.
+
+        """
         # _b denotes batch
         state_b, action_b, cost_b, next_state_b, done_b = zip(*rollouts)
         state_b = torch.FloatTensor(state_b)
@@ -82,7 +114,6 @@ class NFQAgent:
         done_b = torch.FloatTensor(done_b)
 
         state_action_b = torch.cat([state_b, action_b.unsqueeze(1)], 1)
-        predicted_q_values = self._nfq_net(state_action_b).squeeze()
 
         # Compute min_a Q(s', a)
         q_next_state_left_b = self._nfq_net(
@@ -97,28 +128,40 @@ class NFQAgent:
         with torch.no_grad():
             target_q_values = cost_b + gamma * q_next_state_b * (1 - done_b)
 
-        return predicted_q_values, target_q_values
+        return state_action_b, target_q_values
 
-    def train(self, pattern_set):
-        """Train neural network with a given pattern set."""
-        predicted_q_values, target_q_values = pattern_set
+    def train(self, pattern_set: Tuple[torch.Tensor, torch.Tensor]) -> float:
+        """Train neural network with a given pattern set.
+
+        Parameters
+        ----------
+        pattern_set : tuple of torch.Tensor
+            Pattern set to train the NFQ network.
+
+        Returns
+        -------
+        loss : float
+            Training loss.
+
+        """
+        state_action_b, target_q_values = pattern_set
 
         # TODO(seungjaeryanlee): Move somewhere else?
         # Variant 2: Clamp function to zero in goal region
-        goal_patterns = self.get_goal_patterns(factor=100)
-        goal_patterns = torch.FloatTensor(goal_patterns)
-        predicted_goal_values = self._nfq_net(goal_patterns).squeeze()
-        goal_target = torch.FloatTensor([0] * 100)
-        predicted_q_values = torch.cat(
-            [predicted_q_values, predicted_goal_values], dim=0
-        )
-        target_q_values = torch.cat([target_q_values, goal_target], dim=0)
+        goal_state_action_b, goal_target_q_values = self.get_goal_pattern_set()
+        goal_state_action_b = torch.FloatTensor(goal_state_action_b)
+        goal_target_q_values = torch.FloatTensor(goal_target_q_values)
+        state_action_b = torch.cat([state_action_b, goal_state_action_b], dim=0)
+        target_q_values = torch.cat([target_q_values, goal_target_q_values], dim=0)
 
+        predicted_q_values = self._nfq_net(state_action_b).squeeze()
         loss = F.mse_loss(predicted_q_values, target_q_values)
 
         self._optimizer.zero_grad()
         loss.backward()
         self._optimizer.step()
+
+        return loss.item()
 
     def evaluate(self, eval_env: gym.Env) -> Tuple[int, str]:
         """Evaluate NFQ agent on evaluation environment.
