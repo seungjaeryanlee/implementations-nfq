@@ -114,7 +114,7 @@ class NFQAgent:
         self._optimizer.step()
 
     def evaluate(self, eval_env, episodes=1):
-        """Evaluate NFQ agent on test environment."""
+        """Evaluate NFQ agent on evaluation environment."""
         steps = 0
         nb_success = 0
         for _ in range(episodes):

@@ -112,7 +112,7 @@ def main():
     parser.add("-c", "--config", required=True, is_config_file=True)
     parser.add("--EPOCH", dest="EPOCH", type=int)
     parser.add("--TRAIN_ENV_MAX_STEPS", dest="TRAIN_ENV_MAX_STEPS", type=int)
-    parser.add("--TEST_ENV_MAX_STEPS", dest="TEST_ENV_MAX_STEPS", type=int)
+    parser.add("--EVAL_ENV_MAX_STEPS", dest="EVAL_ENV_MAX_STEPS", type=int)
     parser.add("--DISCOUNT", dest="DISCOUNT", type=float)
     parser.add("--RANDOM_SEED", dest="RANDOM_SEED", type=int)
     parser.add("--SAVE_PATH", dest="SAVE_PATH", type=str, default="")
@@ -152,7 +152,7 @@ def main():
 
     # Setup environment
     train_env = CartPoleRegulatorEnv(mode="train")
-    test_env = CartPoleRegulatorEnv(mode="test")
+    eval_env = CartPoleRegulatorEnv(mode="eval")
 
     # Fix random seeds
     if CONFIG.RANDOM_SEED is not None:
@@ -160,7 +160,7 @@ def main():
             CONFIG.RANDOM_SEED, use_random=True, use_numpy=True, use_torch=True
         )
         train_env.seed(CONFIG.RANDOM_SEED)
-        test_env.seed(CONFIG.RANDOM_SEED)
+        eval_env.seed(CONFIG.RANDOM_SEED)
     else:
         logger.warning("Running without a random seed: this run is NOT reproducible.")
 
@@ -181,28 +181,24 @@ def main():
         new_rollout = generate_rollout(train_env, nfq_agent, render=False)
         rollout.extend(new_rollout)
 
-        logger.info(
-            "Epoch {:4d} | TRAINING   | Steps: {:4d}".format(epoch, len(new_rollout))
-        )
         if CONFIG.USE_TENSORBOARD:
             writer.add_scalar("train/episode_length", len(new_rollout), epoch)
         if CONFIG.USE_WANDB:
             wandb.log({"Train Episode Length": len(new_rollout)}, step=epoch)
 
-        # Train from all past experience
         nfq_agent.train(rollout)
+        number_of_steps, _ = nfq_agent.evaluate(eval_env, episodes=1)
 
-        # Test on 3000-step environment
-        number_of_steps, _ = nfq_agent.evaluate(test_env, episodes=1)
         logger.info(
-            "Epoch {:4d} | TEST       | Steps: {:4d}".format(
-                epoch, int(number_of_steps)
+            "Epoch {:4d} | Rollout Steps: {:4d} | Evaluation Steps: {:4d}".format(
+                epoch, len(new_rollout), int(number_of_steps)
             )
         )
+
         if CONFIG.USE_TENSORBOARD:
-            writer.add_scalar("test/episode_length", int(number_of_steps), epoch)
+            writer.add_scalar("eval/episode_length", int(number_of_steps), epoch)
         if CONFIG.USE_WANDB:
-            wandb.log({"Test Episode Length": int(number_of_steps)}, step=epoch)
+            wandb.log({"Evaluation Episode Length": int(number_of_steps)}, step=epoch)
 
         if number_of_steps == 3000:
             break
@@ -220,7 +216,7 @@ def main():
         )
 
     train_env.close()
-    test_env.close()
+    eval_env.close()
 
 
 if __name__ == "__main__":

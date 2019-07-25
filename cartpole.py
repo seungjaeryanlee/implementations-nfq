@@ -70,7 +70,7 @@ class CartPoleRegulatorEnv(gym.Env):
 
         self.c_trans = 0.01
 
-        assert mode in ["train", "test"]
+        assert mode in ["train", "eval"]
         self.mode = mode
         self.max_steps = 100 if mode == "train" else 3000
 
