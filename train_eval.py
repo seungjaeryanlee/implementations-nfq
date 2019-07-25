@@ -61,39 +61,14 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
+from agents import NFQAgent
 from cartpole import CartPoleRegulatorEnv
 from networks import NFQNetwork
 from utils import get_logger, make_reproducible
 
 
-def get_best_action(nfq_net: nn.Module, obs: np.array) -> int:
-    """
-    Return best action for given observation according to the neural network.
-
-    Parameters
-    ----------
-    nfq_net : nn.Module
-        The Q-Network that returns estimated cost given observation and action.
-    obs : np.array
-        An observation to find the best action for.
-
-    Returns
-    -------
-    action : int
-        The action chosen by greedy selection.
-
-    """
-    q_left = nfq_net(torch.cat([torch.FloatTensor(obs), torch.FloatTensor([0])], dim=0))
-    q_right = nfq_net(
-        torch.cat([torch.FloatTensor(obs), torch.FloatTensor([1])], dim=0)
-    )
-
-    # Best action has lower "Q" value since it estimates cumulative cost.
-    return 1 if q_left >= q_right else 0
-
-
 def generate_rollout(
-    env: gym.Env, nfq_net: nn.Module = None, render: bool = False
+    env: gym.Env, nfq_agent: nn.Module = None, render: bool = False
 ) -> List[Tuple[np.array, int, int, np.array, bool]]:
     """
     Generate rollout using given neural network.
@@ -104,8 +79,8 @@ def generate_rollout(
     ----------
     env : gym.Env
         The environment to generate rollout from.
-    nfq_net : nn.Module
-        The Q-Network that returns estimated cost given observation and action.
+    nfq_agent : nn.Module
+        The NFQ agent.
     render: bool
         If true, render environment.
 
@@ -119,7 +94,9 @@ def generate_rollout(
     obs = env.reset()
     done = False
     while not done:
-        action = get_best_action(nfq_net, obs) if nfq_net else env.action_space.sample()
+        action = (
+            nfq_agent.get_best_action(obs) if nfq_agent else env.action_space.sample()
+        )
         next_obs, cost, done, _ = env.step(action)
         rollout.append((obs, action, cost, next_obs, done))
         obs = next_obs
@@ -189,7 +166,7 @@ def get_goal_patterns(nfq_net, optimizer, factor=100):
     return goal_patterns
 
 
-def test(env, nfq_net, episodes=1):
+def test(env, nfq_agent, episodes=1):
     """Test NFQ agent on test environment."""
     steps = 0
     nb_success = 0
@@ -198,7 +175,7 @@ def test(env, nfq_net, episodes=1):
         done = False
 
         while not done:
-            action = get_best_action(nfq_net, obs)
+            action = nfq_agent.get_best_action(obs)
             obs, _, done, info = env.step(action)
             steps += 1
 
@@ -271,6 +248,7 @@ def main():
 
     # Setup agent
     nfq_net = NFQNetwork()
+    nfq_agent = NFQAgent(nfq_net)
     optimizer = optim.Rprop(nfq_net.parameters())
 
     # Load trained agent
@@ -282,7 +260,7 @@ def main():
     rollout = []
     for epoch in range(CONFIG.EPOCH + 1):
         # Variant 1: Incermentally add transitions (Section 3.4)
-        new_rollout = generate_rollout(train_env, nfq_net, render=False)
+        new_rollout = generate_rollout(train_env, nfq_agent, render=False)
         rollout.extend(new_rollout)
 
         logger.info(
@@ -297,7 +275,7 @@ def main():
         train(nfq_net, optimizer, rollout)
 
         # Test on 3000-step environment
-        number_of_steps, _ = test(test_env, nfq_net, episodes=1)
+        number_of_steps, _ = test(test_env, nfq_agent, episodes=1)
         logger.info(
             "Epoch {:4d} | TEST       | Steps: {:4d}".format(
                 epoch, int(number_of_steps)
