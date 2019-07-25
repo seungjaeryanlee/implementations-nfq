@@ -111,12 +111,19 @@ def main():
     parser.add("--TRAIN_ENV_MAX_STEPS", type=int)
     parser.add("--EVAL_ENV_MAX_STEPS", type=int)
     parser.add("--DISCOUNT", type=float)
+    parser.add("--INIT_EXPERIENCE", type=int)
+    parser.add("--INCREMENT_EXPERIENCE", action="store_true")
+    parser.add("--HINT_TO_GOAL", action="store_true")
     parser.add("--RANDOM_SEED", type=int)
     parser.add("--SAVE_PATH", type=str, default="")
     parser.add("--LOAD_PATH", type=str, default="")
     parser.add("--USE_TENSORBOARD", action="store_true")
     parser.add("--USE_WANDB", action="store_true")
     CONFIG = parser.parse_args()
+    if not hasattr(CONFIG, "INCREMENT_EXPERIENCE"):
+        CONFIG.USE_TENSORBOARD = False
+    if not hasattr(CONFIG, "HINT_TO_GOAL"):
+        CONFIG.USE_WANDB = False
     if not hasattr(CONFIG, "USE_TENSORBOARD"):
         CONFIG.USE_TENSORBOARD = False
     if not hasattr(CONFIG, "USE_WANDB"):
@@ -175,21 +182,27 @@ def main():
     # NFQ Main loop
     # A set of transition samples denoted as D
     all_rollouts = []
+    if CONFIG.INIT_EXPERIENCE:
+        for _ in range(CONFIG.INIT_EXPERIENCE):
+            all_rollouts.extend(generate_rollout(train_env, None, render=False))
     for epoch in range(CONFIG.EPOCH + 1):
         # Variant 1: Incermentally add transitions (Section 3.4)
-        new_rollout = generate_rollout(
-            train_env, nfq_agent.get_best_action, render=False
-        )
-        all_rollouts.extend(new_rollout)
+        # TODO(seungjaeryanlee): Done before or after training?
+        if CONFIG.INCREMENT_EXPERIENCE:
+            new_rollout = generate_rollout(
+                train_env, nfq_agent.get_best_action, render=False
+            )
+            all_rollouts.extend(new_rollout)
 
         state_action_b, target_q_values = nfq_agent.generate_pattern_set(all_rollouts)
 
         # Variant 2: Clamp function to zero in goal region
-        goal_state_action_b, goal_target_q_values = train_env.get_goal_pattern_set()
-        goal_state_action_b = torch.FloatTensor(goal_state_action_b)
-        goal_target_q_values = torch.FloatTensor(goal_target_q_values)
-        state_action_b = torch.cat([state_action_b, goal_state_action_b], dim=0)
-        target_q_values = torch.cat([target_q_values, goal_target_q_values], dim=0)
+        if CONFIG.HINT_TO_GOAL:
+            goal_state_action_b, goal_target_q_values = train_env.get_goal_pattern_set()
+            goal_state_action_b = torch.FloatTensor(goal_state_action_b)
+            goal_target_q_values = torch.FloatTensor(goal_target_q_values)
+            state_action_b = torch.cat([state_action_b, goal_state_action_b], dim=0)
+            target_q_values = torch.cat([target_q_values, goal_target_q_values], dim=0)
 
         nfq_agent.train((state_action_b, target_q_values))
         eval_score, eval_success = nfq_agent.evaluate(eval_env)
