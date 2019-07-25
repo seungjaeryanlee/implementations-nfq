@@ -166,27 +166,6 @@ def get_goal_patterns(nfq_net, optimizer, factor=100):
     return goal_patterns
 
 
-def test(env, nfq_agent, episodes=1):
-    """Test NFQ agent on test environment."""
-    steps = 0
-    nb_success = 0
-    for _ in range(episodes):
-        obs = env.reset()
-        done = False
-
-        while not done:
-            action = nfq_agent.get_best_action(obs)
-            obs, _, done, info = env.step(action)
-            steps += 1
-
-        nb_success += 1 if info["state"] == "success" else 0
-
-    avg_number_of_steps = float(steps) / episodes
-    success_rate = float(nb_success) / episodes
-
-    return avg_number_of_steps, success_rate
-
-
 def main():
     """Run NFQ."""
     # Setup hyperparameters
@@ -275,7 +254,7 @@ def main():
         train(nfq_net, optimizer, rollout)
 
         # Test on 3000-step environment
-        number_of_steps, _ = test(test_env, nfq_agent, episodes=1)
+        number_of_steps, _ = nfq_agent.evaluate(test_env, episodes=1)
         logger.info(
             "Epoch {:4d} | TEST       | Steps: {:4d}".format(
                 epoch, int(number_of_steps)
