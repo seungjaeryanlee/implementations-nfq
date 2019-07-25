@@ -173,15 +173,17 @@ def main():
         optimizer.load_state_dict(state_dict["optimizer"])
 
     # NFQ Main loop
-    all_rollout = []
+    # A set of transition samples denoted as D
+    all_rollouts = []
     for epoch in range(CONFIG.EPOCH + 1):
         # Variant 1: Incermentally add transitions (Section 3.4)
         new_rollout = generate_rollout(
             train_env, nfq_agent.get_best_action, render=False
         )
-        all_rollout.extend(new_rollout)
+        all_rollouts.extend(new_rollout)
 
-        nfq_agent.train(all_rollout)
+        pattern_set = nfq_agent.generate_pattern_set(all_rollouts)
+        nfq_agent.train(pattern_set)
         eval_score, eval_success = nfq_agent.evaluate(eval_env)
 
         logger.info(

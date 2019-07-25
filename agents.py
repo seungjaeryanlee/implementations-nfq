@@ -70,10 +70,11 @@ class NFQAgent:
 
         return goal_patterns
 
-    def train(self, rollout, gamma=0.95):
-        """Train neural network with a given rollout."""
+    # NOTE(seungjaeryanlee): Returns prediction instead of state-action tuple in paper
+    def generate_pattern_set(self, rollouts, gamma=0.95):
+        """Generate pattern set."""
         state_batch, action_batch, cost_batch, next_state_batch, done_batch = zip(
-            *rollout
+            *rollouts
         )
         state_batch = torch.FloatTensor(state_batch)
         action_batch = torch.FloatTensor(action_batch)
@@ -86,10 +87,10 @@ class NFQAgent:
 
         # Compute min_a Q(s', a)
         q_next_state_left_batch = self._nfq_net(
-            torch.cat([next_state_batch, torch.zeros(len(rollout), 1)], 1)
+            torch.cat([next_state_batch, torch.zeros(len(rollouts), 1)], 1)
         ).squeeze()
         q_next_state_right_batch = self._nfq_net(
-            torch.cat([next_state_batch, torch.ones(len(rollout), 1)], 1)
+            torch.cat([next_state_batch, torch.ones(len(rollouts), 1)], 1)
         ).squeeze()
         q_next_state_batch = torch.min(
             q_next_state_left_batch, q_next_state_right_batch
@@ -99,6 +100,13 @@ class NFQAgent:
         with torch.no_grad():
             target_q_values = cost_batch + gamma * q_next_state_batch * (1 - done_batch)
 
+        return predicted_q_values, target_q_values
+
+    def train(self, pattern_set):
+        """Train neural network with a given pattern set."""
+        predicted_q_values, target_q_values = pattern_set
+
+        # TODO(seungjaeryanlee): Move somewhere else?
         # Variant 2: Clamp function to zero in goal region
         goal_patterns = self.get_goal_patterns(factor=100)
         goal_patterns = torch.FloatTensor(goal_patterns)
