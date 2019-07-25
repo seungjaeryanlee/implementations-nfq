@@ -1,5 +1,4 @@
 """Reinforcement learning agents."""
-import math
 from typing import List, Tuple
 
 import gym
@@ -50,40 +49,6 @@ class NFQAgent:
 
         # Best action has lower "Q" value since it estimates cumulative cost.
         return 1 if q_left >= q_right else 0
-
-    # TODO(seungjaeryanlee): Move to environment
-    def get_goal_pattern_set(
-        self, size: int = 100
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
-        """Use hint-to-goal heuristic to clamp network output.
-
-        Parameters
-        ----------
-        size : int
-            The size of the goal pattern set to generate.
-
-        Returns
-        -------
-        pattern_set : tuple of torch.Tensor
-            Pattern set to train the NFQ network.
-
-        """
-        goal_state_action_b = [
-            np.array(
-                [
-                    # TODO(seungjaeryanlee): What is goal velocity?
-                    np.random.uniform(-0.05, 0.05),
-                    np.random.normal(),
-                    np.random.uniform(-math.pi / 2, math.pi / 2),
-                    np.random.normal(),
-                    np.random.randint(2),
-                ]
-            )
-            for _ in range(size)
-        ]
-        goal_target_q_values = [0] * size
-
-        return goal_state_action_b, goal_target_q_values
 
     def generate_pattern_set(
         self,
@@ -145,15 +110,6 @@ class NFQAgent:
 
         """
         state_action_b, target_q_values = pattern_set
-
-        # TODO(seungjaeryanlee): Move somewhere else?
-        # Variant 2: Clamp function to zero in goal region
-        goal_state_action_b, goal_target_q_values = self.get_goal_pattern_set()
-        goal_state_action_b = torch.FloatTensor(goal_state_action_b)
-        goal_target_q_values = torch.FloatTensor(goal_target_q_values)
-        state_action_b = torch.cat([state_action_b, goal_state_action_b], dim=0)
-        target_q_values = torch.cat([target_q_values, goal_target_q_values], dim=0)
-
         predicted_q_values = self._nfq_net(state_action_b).squeeze()
         loss = F.mse_loss(predicted_q_values, target_q_values)
 

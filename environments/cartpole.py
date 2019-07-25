@@ -242,3 +242,34 @@ class CartPoleRegulatorEnv(gym.Env):
         if self.viewer:
             self.viewer.close()
             self.viewer = None
+
+    def get_goal_pattern_set(self, size: int = 100):
+        """Use hint-to-goal heuristic to clamp network output.
+
+        Parameters
+        ----------
+        size : int
+            The size of the goal pattern set to generate.
+
+        Returns
+        -------
+        pattern_set : tuple of np.ndarray
+            Pattern set to train the NFQ network.
+
+        """
+        goal_state_action_b = [
+            np.array(
+                [
+                    # TODO(seungjaeryanlee): What is goal velocity?
+                    np.random.uniform(-0.05, 0.05),
+                    np.random.normal(),
+                    np.random.uniform(-math.pi / 2, math.pi / 2),
+                    np.random.normal(),
+                    np.random.randint(2),
+                ]
+            )
+            for _ in range(size)
+        ]
+        goal_target_q_values = np.zeros(size)
+
+        return goal_state_action_b, goal_target_q_values

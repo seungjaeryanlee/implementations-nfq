@@ -182,8 +182,16 @@ def main():
         )
         all_rollouts.extend(new_rollout)
 
-        pattern_set = nfq_agent.generate_pattern_set(all_rollouts)
-        nfq_agent.train(pattern_set)
+        state_action_b, target_q_values = nfq_agent.generate_pattern_set(all_rollouts)
+
+        # Variant 2: Clamp function to zero in goal region
+        goal_state_action_b, goal_target_q_values = train_env.get_goal_pattern_set()
+        goal_state_action_b = torch.FloatTensor(goal_state_action_b)
+        goal_target_q_values = torch.FloatTensor(goal_target_q_values)
+        state_action_b = torch.cat([state_action_b, goal_state_action_b], dim=0)
+        target_q_values = torch.cat([target_q_values, goal_target_q_values], dim=0)
+
+        nfq_agent.train((state_action_b, target_q_values))
         eval_score, eval_success = nfq_agent.evaluate(eval_env)
 
         logger.info(
