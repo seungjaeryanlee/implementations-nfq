@@ -108,7 +108,7 @@ def main():
     parser = configargparse.ArgParser()
     parser.add("-c", "--config", required=True, is_config_file=True)
     parser.add("--EPOCH", type=int)
-    parser.add("--TRAIN_ENV_MAX_STEPS",type=int)
+    parser.add("--TRAIN_ENV_MAX_STEPS", type=int)
     parser.add("--EVAL_ENV_MAX_STEPS", type=int)
     parser.add("--DISCOUNT", type=float)
     parser.add("--RANDOM_SEED", type=int)
@@ -172,6 +172,7 @@ def main():
         nfq_net.load_state_dict(state_dict["nfq_net"])
         optimizer.load_state_dict(state_dict["optimizer"])
 
+    # NFQ Main loop
     all_rollout = []
     for epoch in range(CONFIG.EPOCH + 1):
         # Variant 1: Incermentally add transitions (Section 3.4)
@@ -180,26 +181,22 @@ def main():
         )
         all_rollout.extend(new_rollout)
 
-        if CONFIG.USE_TENSORBOARD:
-            writer.add_scalar("train/episode_length", len(new_rollout), epoch)
-        if CONFIG.USE_WANDB:
-            wandb.log({"Train Episode Length": len(new_rollout)}, step=epoch)
-
         nfq_agent.train(all_rollout)
-        eval_score, _ = nfq_agent.evaluate(eval_env)
+        eval_score, eval_success = nfq_agent.evaluate(eval_env)
 
         logger.info(
             "Epoch {:4d} | Rollout Steps: {:4d} | Evaluation Steps: {:4d}".format(
                 epoch, len(new_rollout), eval_score
             )
         )
-
         if CONFIG.USE_TENSORBOARD:
+            writer.add_scalar("train/episode_length", len(new_rollout), epoch)
             writer.add_scalar("eval/episode_length", eval_score, epoch)
         if CONFIG.USE_WANDB:
+            wandb.log({"Train Episode Length": len(new_rollout)}, step=epoch)
             wandb.log({"Evaluation Episode Length": eval_score}, step=epoch)
 
-        if eval_score == 3000:
+        if eval_success:
             break
 
     # Save trained agent
