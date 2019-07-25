@@ -49,7 +49,6 @@ Glossary
 env : Environment
 obs : Observation
 """
-import math
 import os
 from typing import List, Tuple
 
@@ -58,7 +57,6 @@ import gym
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 import torch.optim as optim
 
 from agents import NFQAgent
@@ -105,65 +103,6 @@ def generate_rollout(
             env.render()
 
     return rollout
-
-
-def train(nfq_net, optimizer, rollout, gamma=0.95):
-    """Train neural network with a given rollout."""
-    state_batch, action_batch, cost_batch, next_state_batch, done_batch = zip(*rollout)
-    state_batch = torch.FloatTensor(state_batch)
-    action_batch = torch.FloatTensor(action_batch)
-    cost_batch = torch.FloatTensor(cost_batch)
-    next_state_batch = torch.FloatTensor(next_state_batch)
-    done_batch = torch.FloatTensor(done_batch)
-
-    state_action_batch = torch.cat([state_batch, action_batch.unsqueeze(1)], 1)
-    predicted_q_values = nfq_net(state_action_batch).squeeze()
-
-    # Compute min_a Q(s', a)
-    q_next_state_left_batch = nfq_net(
-        torch.cat([next_state_batch, torch.zeros(len(rollout), 1)], 1)
-    ).squeeze()
-    q_next_state_right_batch = nfq_net(
-        torch.cat([next_state_batch, torch.ones(len(rollout), 1)], 1)
-    ).squeeze()
-    q_next_state_batch = torch.min(q_next_state_left_batch, q_next_state_right_batch)
-
-    # TODO(seungjaeryanlee): Done mask not mentioned in paper, but should I add it?
-    with torch.no_grad():
-        target_q_values = cost_batch + gamma * q_next_state_batch
-
-    # Variant 2: Clamp function to zero in goal region
-    goal_patterns = get_goal_patterns(nfq_net, optimizer, factor=100)
-    goal_patterns = torch.FloatTensor(goal_patterns)
-    predicted_goal_values = nfq_net(goal_patterns).squeeze()
-    goal_target = torch.FloatTensor([0] * 100)
-    predicted_q_values = torch.cat([predicted_q_values, predicted_goal_values], dim=0)
-    target_q_values = torch.cat([target_q_values, goal_target], dim=0)
-
-    loss = F.mse_loss(predicted_q_values, target_q_values)
-
-    optimizer.zero_grad()
-    loss.backward()
-    optimizer.step()
-
-
-def get_goal_patterns(nfq_net, optimizer, factor=100):
-    """Use hint-to-goal heuristic to clamp network output."""
-    goal_patterns = []
-    for _ in range(factor):
-        state_action_pair = np.array(
-            [
-                # TODO(seungjaeryanlee): What is goal velocity?
-                np.random.uniform(-0.05, 0.05),
-                np.random.normal(),
-                np.random.uniform(-math.pi / 2, math.pi / 2),
-                np.random.normal(),
-                np.random.randint(2),
-            ]
-        )
-        goal_patterns.append(state_action_pair)
-
-    return goal_patterns
 
 
 def main():
@@ -227,8 +166,8 @@ def main():
 
     # Setup agent
     nfq_net = NFQNetwork()
-    nfq_agent = NFQAgent(nfq_net)
     optimizer = optim.Rprop(nfq_net.parameters())
+    nfq_agent = NFQAgent(nfq_net, optimizer)
 
     # Load trained agent
     if CONFIG.LOAD_PATH:
@@ -251,7 +190,7 @@ def main():
             wandb.log({"Train Episode Length": len(new_rollout)}, step=epoch)
 
         # Train from all past experience
-        train(nfq_net, optimizer, rollout)
+        nfq_agent.train(rollout)
 
         # Test on 3000-step environment
         number_of_steps, _ = nfq_agent.evaluate(test_env, episodes=1)
