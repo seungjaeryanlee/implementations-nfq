@@ -76,8 +76,8 @@ def generate_rollout(
     ----------
     env : gym.Env
         The environment to generate rollout from.
-    nfq_agent : nn.Module
-        The NFQ agent.
+    get_best_action : Callable
+        Greedy policy.
     render: bool
         If true, render environment.
 
@@ -172,34 +172,34 @@ def main():
         nfq_net.load_state_dict(state_dict["nfq_net"])
         optimizer.load_state_dict(state_dict["optimizer"])
 
-    rollout = []
+    all_rollout = []
     for epoch in range(CONFIG.EPOCH + 1):
         # Variant 1: Incermentally add transitions (Section 3.4)
         new_rollout = generate_rollout(
             train_env, nfq_agent.get_best_action, render=False
         )
-        rollout.extend(new_rollout)
+        all_rollout.extend(new_rollout)
 
         if CONFIG.USE_TENSORBOARD:
             writer.add_scalar("train/episode_length", len(new_rollout), epoch)
         if CONFIG.USE_WANDB:
             wandb.log({"Train Episode Length": len(new_rollout)}, step=epoch)
 
-        nfq_agent.train(rollout)
-        number_of_steps, _ = nfq_agent.evaluate(eval_env)
+        nfq_agent.train(all_rollout)
+        eval_score, _ = nfq_agent.evaluate(eval_env)
 
         logger.info(
             "Epoch {:4d} | Rollout Steps: {:4d} | Evaluation Steps: {:4d}".format(
-                epoch, len(new_rollout), int(number_of_steps)
+                epoch, len(new_rollout), eval_score
             )
         )
 
         if CONFIG.USE_TENSORBOARD:
-            writer.add_scalar("eval/episode_length", int(number_of_steps), epoch)
+            writer.add_scalar("eval/episode_length", eval_score, epoch)
         if CONFIG.USE_WANDB:
-            wandb.log({"Evaluation Episode Length": int(number_of_steps)}, step=epoch)
+            wandb.log({"Evaluation Episode Length": eval_score}, step=epoch)
 
-        if number_of_steps == 3000:
+        if eval_score == 3000:
             break
 
     # Save trained agent
