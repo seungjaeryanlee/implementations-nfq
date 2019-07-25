@@ -50,13 +50,12 @@ env : Environment
 obs : Observation
 """
 import os
-from typing import List, Tuple
+from typing import Callable, List, Tuple
 
 import configargparse
 import gym
 import numpy as np
 import torch
-import torch.nn as nn
 import torch.optim as optim
 
 from agents import NFQAgent
@@ -66,7 +65,7 @@ from utils import get_logger, make_reproducible
 
 
 def generate_rollout(
-    env: gym.Env, nfq_agent: nn.Module = None, render: bool = False
+    env: gym.Env, get_best_action: Callable = None, render: bool = False
 ) -> List[Tuple[np.array, int, int, np.array, bool]]:
     """
     Generate rollout using given neural network.
@@ -92,9 +91,7 @@ def generate_rollout(
     obs = env.reset()
     done = False
     while not done:
-        action = (
-            nfq_agent.get_best_action(obs) if nfq_agent else env.action_space.sample()
-        )
+        action = get_best_action(obs) if get_best_action else env.action_space.sample()
         next_obs, cost, done, _ = env.step(action)
         rollout.append((obs, action, cost, next_obs, done))
         obs = next_obs
@@ -178,7 +175,9 @@ def main():
     rollout = []
     for epoch in range(CONFIG.EPOCH + 1):
         # Variant 1: Incermentally add transitions (Section 3.4)
-        new_rollout = generate_rollout(train_env, nfq_agent, render=False)
+        new_rollout = generate_rollout(
+            train_env, nfq_agent.get_best_action, render=False
+        )
         rollout.extend(new_rollout)
 
         if CONFIG.USE_TENSORBOARD:
