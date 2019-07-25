@@ -73,32 +73,29 @@ class NFQAgent:
     # NOTE(seungjaeryanlee): Returns prediction instead of state-action tuple in paper
     def generate_pattern_set(self, rollouts, gamma=0.95):
         """Generate pattern set."""
-        state_batch, action_batch, cost_batch, next_state_batch, done_batch = zip(
-            *rollouts
-        )
-        state_batch = torch.FloatTensor(state_batch)
-        action_batch = torch.FloatTensor(action_batch)
-        cost_batch = torch.FloatTensor(cost_batch)
-        next_state_batch = torch.FloatTensor(next_state_batch)
-        done_batch = torch.FloatTensor(done_batch)
+        # _b denotes batch
+        state_b, action_b, cost_b, next_state_b, done_b = zip(*rollouts)
+        state_b = torch.FloatTensor(state_b)
+        action_b = torch.FloatTensor(action_b)
+        cost_b = torch.FloatTensor(cost_b)
+        next_state_b = torch.FloatTensor(next_state_b)
+        done_b = torch.FloatTensor(done_b)
 
-        state_action_batch = torch.cat([state_batch, action_batch.unsqueeze(1)], 1)
-        predicted_q_values = self._nfq_net(state_action_batch).squeeze()
+        state_action_b = torch.cat([state_b, action_b.unsqueeze(1)], 1)
+        predicted_q_values = self._nfq_net(state_action_b).squeeze()
 
         # Compute min_a Q(s', a)
-        q_next_state_left_batch = self._nfq_net(
-            torch.cat([next_state_batch, torch.zeros(len(rollouts), 1)], 1)
+        q_next_state_left_b = self._nfq_net(
+            torch.cat([next_state_b, torch.zeros(len(rollouts), 1)], 1)
         ).squeeze()
-        q_next_state_right_batch = self._nfq_net(
-            torch.cat([next_state_batch, torch.ones(len(rollouts), 1)], 1)
+        q_next_state_right_b = self._nfq_net(
+            torch.cat([next_state_b, torch.ones(len(rollouts), 1)], 1)
         ).squeeze()
-        q_next_state_batch = torch.min(
-            q_next_state_left_batch, q_next_state_right_batch
-        )
+        q_next_state_b = torch.min(q_next_state_left_b, q_next_state_right_b)
 
         # NOTE(seungjaeryanlee): Done mask not mentioned in paper
         with torch.no_grad():
-            target_q_values = cost_batch + gamma * q_next_state_batch * (1 - done_batch)
+            target_q_values = cost_b + gamma * q_next_state_b * (1 - done_b)
 
         return predicted_q_values, target_q_values
 
