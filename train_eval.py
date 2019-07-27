@@ -85,21 +85,25 @@ def generate_rollout(
     -------
     rollout : List of Tuple
         Generated rollout.
+    episode_cost : float
+        Cumulative cost throughout the episode.
 
     """
     rollout = []
+    episode_cost = 0
     obs = env.reset()
     done = False
     while not done:
         action = get_best_action(obs) if get_best_action else env.action_space.sample()
         next_obs, cost, done, _ = env.step(action)
         rollout.append((obs, action, cost, next_obs, done))
+        episode_cost += cost
         obs = next_obs
 
         if render:
             env.render()
 
-    return rollout
+    return rollout, episode_cost
 
 
 def main():
@@ -182,17 +186,21 @@ def main():
     # NFQ Main loop
     # A set of transition samples denoted as D
     all_rollouts = []
+    total_cost = 0
     if CONFIG.INIT_EXPERIENCE:
         for _ in range(CONFIG.INIT_EXPERIENCE):
-            all_rollouts.extend(generate_rollout(train_env, None, render=False))
+            rollout, episode_cost = generate_rollout(train_env, None, render=False)
+            all_rollouts.extend(rollout)
+            total_cost += episode_cost
     for epoch in range(CONFIG.EPOCH + 1):
         # Variant 1: Incermentally add transitions (Section 3.4)
         # TODO(seungjaeryanlee): Done before or after training?
         if CONFIG.INCREMENT_EXPERIENCE:
-            new_rollout = generate_rollout(
+            new_rollout, episode_cost = generate_rollout(
                 train_env, nfq_agent.get_best_action, render=False
             )
             all_rollouts.extend(new_rollout)
+            total_cost += episode_cost
 
         state_action_b, target_q_values = nfq_agent.generate_pattern_set(all_rollouts)
 
@@ -207,21 +215,32 @@ def main():
         nfq_agent.train((state_action_b, target_q_values))
 
         # TODO(seungjaeryanlee): Evaluation should be done with 3000 episodes
-        eval_score, eval_success = nfq_agent.evaluate(eval_env)
+        eval_episode_length, eval_success, eval_episode_cost = nfq_agent.evaluate(
+            eval_env
+        )
 
         logger.info(
-            "Epoch {:4d} | Rollout Steps: {:4d} | Evaluation Steps: {:4d}".format(
-                epoch, len(new_rollout), eval_score
+            "Epoch {:4d} | Train {:4d} / {:.2f}  | Evaluation Length {:4d} / {:2.2f}".format(
+                epoch,
+                len(new_rollout),
+                episode_cost,
+                eval_episode_length,
+                eval_episode_cost,
             )
         )
         if CONFIG.USE_TENSORBOARD:
             writer.add_scalar("train/episode_length", len(new_rollout), epoch)
-            writer.add_scalar("eval/episode_length", eval_score, epoch)
+            writer.add_scalar("eval/episode_length", eval_episode_length, epoch)
         if CONFIG.USE_WANDB:
             wandb.log({"Train Episode Length": len(new_rollout)}, step=epoch)
-            wandb.log({"Evaluation Episode Length": eval_score}, step=epoch)
+            wandb.log({"Evaluation Episode Length": eval_episode_length}, step=epoch)
 
         if eval_success:
+            logger.info(
+                "Epoch {:4d} | Total Cycles {:6d} | Total Cost {:4.2f}".format(
+                    epoch, len(rollout), total_cost
+                )
+            )
             break
 
     # Save trained agent

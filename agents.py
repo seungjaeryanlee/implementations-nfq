@@ -119,7 +119,7 @@ class NFQAgent:
 
         return loss.item()
 
-    def evaluate(self, eval_env: gym.Env) -> Tuple[int, str]:
+    def evaluate(self, eval_env: gym.Env) -> Tuple[int, str, float]:
         """Evaluate NFQ agent on evaluation environment.
 
         Parameters
@@ -129,19 +129,25 @@ class NFQAgent:
 
         Returns
         -------
-        steps : int
+        episode_length : int
             Number of steps the agent took.
         success : bool
             True if the agent was terminated due to max timestep.
+        episode_cost : float
+            Total cost accumulated from the evaluation episode.
 
         """
-        steps = 0
+        episode_length = 0
         obs = eval_env.reset()
         done = False
 
+        episode_cost = 0
         while not done:
             action = self.get_best_action(obs)
             obs, cost, done, info = eval_env.step(action)
-            steps += 1
+            episode_cost += cost
+            episode_length += 1
 
-        return steps, (steps == eval_env.max_steps and -0.05 <= obs[0] <= 0.05)
+        success = episode_length == eval_env.max_steps and -0.05 <= obs[0] <= 0.05
+
+        return episode_length, success, episode_cost
