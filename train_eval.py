@@ -50,11 +50,8 @@ env : Environment
 obs : Observation
 """
 import os
-from typing import Callable, List, Tuple
 
 import configargparse
-import gym
-import numpy as np
 import torch
 import torch.optim as optim
 
@@ -62,48 +59,6 @@ from agents import NFQAgent
 from environments import CartPoleRegulatorEnv
 from networks import NFQNetwork
 from utils import get_logger, make_reproducible
-
-
-def generate_rollout(
-    env: gym.Env, get_best_action: Callable = None, render: bool = False
-) -> List[Tuple[np.array, int, int, np.array, bool]]:
-    """
-    Generate rollout using given neural network.
-
-    If a network is not given, generate random rollout instead.
-
-    Parameters
-    ----------
-    env : gym.Env
-        The environment to generate rollout from.
-    get_best_action : Callable
-        Greedy policy.
-    render: bool
-        If true, render environment.
-
-    Returns
-    -------
-    rollout : List of Tuple
-        Generated rollout.
-    episode_cost : float
-        Cumulative cost throughout the episode.
-
-    """
-    rollout = []
-    episode_cost = 0
-    obs = env.reset()
-    done = False
-    while not done:
-        action = get_best_action(obs) if get_best_action else env.action_space.sample()
-        next_obs, cost, done, _ = env.step(action)
-        rollout.append((obs, action, cost, next_obs, done))
-        episode_cost += cost
-        obs = next_obs
-
-        if render:
-            env.render()
-
-    return rollout, episode_cost
 
 
 def main():
@@ -189,15 +144,15 @@ def main():
     total_cost = 0
     if CONFIG.INIT_EXPERIENCE:
         for _ in range(CONFIG.INIT_EXPERIENCE):
-            rollout, episode_cost = generate_rollout(train_env, None, render=False)
+            rollout, episode_cost = train_env.generate_rollout(None, render=False)
             all_rollouts.extend(rollout)
             total_cost += episode_cost
     for epoch in range(CONFIG.EPOCH + 1):
         # Variant 1: Incermentally add transitions (Section 3.4)
         # TODO(seungjaeryanlee): Done before or after training?
         if CONFIG.INCREMENT_EXPERIENCE:
-            new_rollout, episode_cost = generate_rollout(
-                train_env, nfq_agent.get_best_action, render=False
+            new_rollout, episode_cost = train_env.generate_rollout(
+                nfq_agent.get_best_action, render=False
             )
             all_rollouts.extend(new_rollout)
             total_cost += episode_cost

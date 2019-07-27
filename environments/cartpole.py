@@ -5,6 +5,7 @@ permalink: https://perma.cc/C9ZM-652R
 """
 # flake8: noqa
 import math
+from typing import Callable, List, Tuple
 
 import gym
 import numpy as np
@@ -273,3 +274,44 @@ class CartPoleRegulatorEnv(gym.Env):
         goal_target_q_values = np.zeros(size)
 
         return goal_state_action_b, goal_target_q_values
+
+    def generate_rollout(
+        self, get_best_action: Callable = None, render: bool = False
+    ) -> List[Tuple[np.array, int, int, np.array, bool]]:
+        """
+        Generate rollout using given action selection function.
+
+        If a network is not given, generate random rollout instead.
+
+        Parameters
+        ----------
+        get_best_action : Callable
+            Greedy policy.
+        render: bool
+            If true, render environment.
+
+        Returns
+        -------
+        rollout : List of Tuple
+            Generated rollout.
+        episode_cost : float
+            Cumulative cost throughout the episode.
+
+        """
+        rollout = []
+        episode_cost = 0
+        obs = self.reset()
+        done = False
+        while not done:
+            action = (
+                get_best_action(obs) if get_best_action else self.action_space.sample()
+            )
+            next_obs, cost, done, _ = self.step(action)
+            rollout.append((obs, action, cost, next_obs, done))
+            episode_cost += cost
+            obs = next_obs
+
+            if render:
+                self.render()
+
+        return rollout, episode_cost
