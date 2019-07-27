@@ -167,7 +167,7 @@ def main():
             state_action_b = torch.cat([state_action_b, goal_state_action_b], dim=0)
             target_q_values = torch.cat([target_q_values, goal_target_q_values], dim=0)
 
-        nfq_agent.train((state_action_b, target_q_values))
+        loss = nfq_agent.train((state_action_b, target_q_values))
 
         # TODO(seungjaeryanlee): Evaluation should be done with 3000 episodes
         eval_episode_length, eval_success, eval_episode_cost = nfq_agent.evaluate(
@@ -175,19 +175,17 @@ def main():
         )
 
         logger.info(
-            "Epoch {:4d} | Train {:4d} / {:.2f}  | Evaluation Length {:4d} / {:2.2f}".format(
-                epoch,
-                len(new_rollout),
-                episode_cost,
-                eval_episode_length,
-                eval_episode_cost,
+            "Epoch {:4d} | Length {:4d} | Cost {:2.2f} | Train Loss {:.4f}".format(
+                epoch, eval_episode_length, eval_episode_cost, loss
             )
         )
         if CONFIG.USE_TENSORBOARD:
-            writer.add_scalar("train/episode_length", len(new_rollout), epoch)
+            if CONFIG.INCREMENT_EXPERIENCE:
+                writer.add_scalar("train/episode_length", len(new_rollout), epoch)
             writer.add_scalar("eval/episode_length", eval_episode_length, epoch)
         if CONFIG.USE_WANDB:
-            wandb.log({"Train Episode Length": len(new_rollout)}, step=epoch)
+            if CONFIG.INCREMENT_EXPERIENCE:
+                wandb.log({"Train Episode Length": len(new_rollout)}, step=epoch)
             wandb.log({"Evaluation Episode Length": eval_episode_length}, step=epoch)
 
         if eval_success:
