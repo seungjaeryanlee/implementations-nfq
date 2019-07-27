@@ -89,7 +89,12 @@ class NFQAgent:
         ).squeeze()
         q_next_state_b = torch.min(q_next_state_left_b, q_next_state_right_b)
 
-        # NOTE(seungjaeryanlee): Done mask not mentioned in paper
+        # If goal state (S+): target = 0 + gamma * min Q
+        # If forbidden state (S-): target = 1
+        # If neither: target = c_trans + gamma * min Q
+        # NOTE(seungjaeryanlee): done is True only when the episode terminated
+        #                        due to entering forbidden state. It is not
+        #                        True if it terminated due to maximum timestep.
         with torch.no_grad():
             target_q_values = cost_b + gamma * q_next_state_b * (1 - done_b)
 
@@ -140,9 +145,9 @@ class NFQAgent:
         episode_length = 0
         obs = eval_env.reset()
         done = False
-
+        info = {"time_limit": False}
         episode_cost = 0
-        while not done:
+        while not done and not info["time_limit"]:
             action = self.get_best_action(obs)
             obs, cost, done, info = eval_env.step(action)
             episode_cost += cost

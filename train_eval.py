@@ -193,7 +193,7 @@ def main():
         if eval_success:
             logger.info(
                 "Epoch {:4d} | Total Cycles {:6d} | Total Cost {:4.2f}".format(
-                    epoch, len(rollout), total_cost
+                    epoch, len(all_rollouts), total_cost
                 )
             )
             break

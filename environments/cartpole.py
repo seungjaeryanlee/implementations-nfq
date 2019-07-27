@@ -122,6 +122,9 @@ class CartPoleRegulatorEnv(gym.Env):
 
         return x, x_dot, theta, theta_dot
 
+    # NOTE(seungjaeryanlee): done is True only when the episode terminated due
+    #                        to entering forbidden state. It is not True if it
+    #                        terminated due to maximum timestep.
     def step(self, action):
         assert self.action_space.contains(action), "%r (%s) invalid" % (
             action,
@@ -132,7 +135,7 @@ class CartPoleRegulatorEnv(gym.Env):
 
         self.episode_step += 1
 
-        # Failure State
+        # Forbidden States (S-)
         if (
             x < -self.x_threshold
             or x > self.x_threshold
@@ -141,22 +144,19 @@ class CartPoleRegulatorEnv(gym.Env):
         ):
             done = True
             cost = 1
-            info = {"state": "failure"}
-        # Success State
+        # Goal States (S+)
         elif (
             -self.x_success_range < x < self.x_success_range
             and -self.theta_success_range < theta < self.theta_success_range
         ):
             done = False
             cost = 0
-            info = {"state": "success"}
         else:
             done = False
             cost = self.c_trans
-            info = {"state": "neither"}
 
         # Check for time limit
-        done |= self.episode_step >= self.max_steps
+        info = {"time_limit": self.episode_step >= self.max_steps}
 
         return np.array(self.state), cost, done, info
 
@@ -302,11 +302,12 @@ class CartPoleRegulatorEnv(gym.Env):
         episode_cost = 0
         obs = self.reset()
         done = False
-        while not done:
+        info = {"time_limit": False}
+        while not done and not info["time_limit"]:
             action = (
                 get_best_action(obs) if get_best_action else self.action_space.sample()
             )
-            next_obs, cost, done, _ = self.step(action)
+            next_obs, cost, done, info = self.step(action)
             rollout.append((obs, action, cost, next_obs, done))
             episode_cost += cost
             obs = next_obs
