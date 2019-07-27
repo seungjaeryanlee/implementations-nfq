@@ -65,14 +65,10 @@ class CartPoleRegulatorEnv(gym.Env):
 
         # Success state
         # TODO(seungjaeryanlee): Verify pole angle success state
-        if mode == "train":
-            self.x_success_range = 0.05
-            self.theta_success_range = 12 * 2 * math.pi / 360
-        else:
-            # NOTE(seungjaeryanlee): Relaxed definition of success state
-            #                        that deviates from paper
-            self.x_success_range = 2.4
-            self.theta_success_range = 12 * 2 * math.pi / 360
+        # NOTE(seungjaeryanlee): Relaxed definition of success state
+        #                        that deviates from paper
+        self.x_success_range = 2.4
+        self.theta_success_range = 12 * 2 * math.pi / 360
 
         # Failure state description
         # TODO(seungjaeryanlee): Verify pole angle threshold
