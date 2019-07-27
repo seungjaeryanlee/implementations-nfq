@@ -74,15 +74,18 @@ def main():
     parser.add("--INCREMENT_EXPERIENCE", action="store_true")
     parser.add("--HINT_TO_GOAL", action="store_true")
     parser.add("--RANDOM_SEED", type=int)
+    parser.add("--RENDER", action="store_true")
     parser.add("--SAVE_PATH", type=str, default="")
     parser.add("--LOAD_PATH", type=str, default="")
     parser.add("--USE_TENSORBOARD", action="store_true")
     parser.add("--USE_WANDB", action="store_true")
     CONFIG = parser.parse_args()
     if not hasattr(CONFIG, "INCREMENT_EXPERIENCE"):
-        CONFIG.USE_TENSORBOARD = False
+        CONFIG.INCREMENT_EXPERIENCE = False
     if not hasattr(CONFIG, "HINT_TO_GOAL"):
-        CONFIG.USE_WANDB = False
+        CONFIG.HINT_TO_GOAL = False
+    if not hasattr(CONFIG, "RENDER"):
+        CONFIG.RENDER = False
     if not hasattr(CONFIG, "USE_TENSORBOARD"):
         CONFIG.USE_TENSORBOARD = False
     if not hasattr(CONFIG, "USE_WANDB"):
@@ -144,7 +147,9 @@ def main():
     total_cost = 0
     if CONFIG.INIT_EXPERIENCE:
         for _ in range(CONFIG.INIT_EXPERIENCE):
-            rollout, episode_cost = train_env.generate_rollout(None, render=False)
+            rollout, episode_cost = train_env.generate_rollout(
+                None, render=CONFIG.RENDER
+            )
             all_rollouts.extend(rollout)
             total_cost += episode_cost
     for epoch in range(CONFIG.EPOCH + 1):
@@ -152,7 +157,7 @@ def main():
         # TODO(seungjaeryanlee): Done before or after training?
         if CONFIG.INCREMENT_EXPERIENCE:
             new_rollout, episode_cost = train_env.generate_rollout(
-                nfq_agent.get_best_action, render=False
+                nfq_agent.get_best_action, render=CONFIG.RENDER
             )
             all_rollouts.extend(new_rollout)
             total_cost += episode_cost
@@ -175,7 +180,7 @@ def main():
         )
 
         logger.info(
-            "Epoch {:4d} | Length {:4d} | Cost {:2.2f} | Train Loss {:.4f}".format(
+            "Epoch {:4d} | Length {:4d} | Cost {:5.2f} | Train Loss {:.4f}".format(
                 epoch, eval_episode_length, eval_episode_cost, loss
             )
         )
