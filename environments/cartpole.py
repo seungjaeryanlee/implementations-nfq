@@ -270,7 +270,9 @@ class CartPoleRegulatorEnv(gym.Env):
                     # TODO(seungjaeryanlee): What is goal velocity?
                     np.random.uniform(-0.05, 0.05),
                     np.random.normal(),
-                    np.random.uniform(-self.theta_success_range, self.theta_success_range),
+                    np.random.uniform(
+                        -self.theta_success_range, self.theta_success_range
+                    ),
                     np.random.normal(),
                     np.random.randint(2),
                 ]
@@ -310,9 +312,11 @@ class CartPoleRegulatorEnv(gym.Env):
         done = False
         info = {"time_limit": False}
         while not done and not info["time_limit"]:
-            action = (
-                get_best_action(obs) if get_best_action else self.action_space.sample()
-            )
+            if get_best_action:
+                action = get_best_action(obs)
+            else:
+                action = self.action_space.sample()
+
             next_obs, cost, done, info = self.step(action)
             rollout.append((obs, action, cost, next_obs, done))
             episode_cost += cost

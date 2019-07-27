@@ -159,6 +159,9 @@ class NFQAgent:
             if render:
                 eval_env.render()
 
-        success = episode_length == eval_env.max_steps and abs(obs[0]) <= eval_env.x_success_range
+        success = (
+            episode_length == eval_env.max_steps
+            and abs(obs[0]) <= eval_env.x_success_range
+        )
 
         return episode_length, success, episode_cost
