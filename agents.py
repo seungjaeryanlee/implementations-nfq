@@ -141,7 +141,7 @@ class NFQAgent:
 
         while not done:
             action = self.get_best_action(obs)
-            obs, _, done, info = eval_env.step(action)
+            obs, cost, done, info = eval_env.step(action)
             steps += 1
 
-        return steps, steps == eval_env.max_steps
+        return steps, (steps == eval_env.max_steps and -0.05 <= obs[0] <= 0.05)

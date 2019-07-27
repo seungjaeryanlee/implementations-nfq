@@ -205,6 +205,8 @@ def main():
             target_q_values = torch.cat([target_q_values, goal_target_q_values], dim=0)
 
         nfq_agent.train((state_action_b, target_q_values))
+
+        # TODO(seungjaeryanlee): Evaluation should be done with 3000 episodes
         eval_score, eval_success = nfq_agent.evaluate(eval_env)
 
         logger.info(
