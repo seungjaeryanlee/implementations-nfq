@@ -79,6 +79,7 @@ class NFQAgent:
         done_b = torch.FloatTensor(done_b)
 
         state_action_b = torch.cat([state_b, action_b.unsqueeze(1)], 1)
+        assert state_action_b.shape == (len(rollouts), state_b.shape[1] + 1)
 
         # Compute min_a Q(s', a)
         q_next_state_left_b = self._nfq_net(
