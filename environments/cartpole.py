@@ -59,21 +59,25 @@ class CartPoleRegulatorEnv(gym.Env):
         self.tau = 0.02  # seconds between state updates
         self.kinematics_integrator = "euler"
 
-        # Success state
-        # TODO(seungjaeryanlee): Verify pole angle success state
-        self.theta_success_range = math.pi / 2
-        self.x_success_range = 0.05
-
-        # Failure state description
-        # TODO(seungjaeryanlee): Verify pole angle threshold
-        self.theta_threshold_radians = math.pi / 2
-        self.x_threshold = 2.4
-
-        self.c_trans = 0.01
-
         assert mode in ["train", "eval"]
         self.mode = mode
         self.max_steps = 100 if mode == "train" else 3000
+
+        # Success state
+        self.x_success_range = 0.05
+        # TODO(seungjaeryanlee): Verify pole angle success state
+        # NOTE(seungjaeryanlee): Deviate from paper
+        if mode == "train":
+            self.theta_success_range = 12 * 2 * math.pi / 360
+        else:
+            self.theta_success_range = math.pi / 2
+
+        # Failure state description
+        # TODO(seungjaeryanlee): Verify pole angle threshold
+        self.x_threshold = 2.4
+        self.theta_threshold_radians = math.pi / 2
+
+        self.c_trans = 0.01
 
         # Angle limit set to 2 * theta_threshold_radians so failing observation is still within bounds
         high = np.array(
@@ -264,7 +268,7 @@ class CartPoleRegulatorEnv(gym.Env):
                     # TODO(seungjaeryanlee): What is goal velocity?
                     np.random.uniform(-0.05, 0.05),
                     np.random.normal(),
-                    np.random.uniform(-math.pi / 2, math.pi / 2),
+                    np.random.uniform(-self.theta_success_range, self.theta_success_range),
                     np.random.normal(),
                     np.random.randint(2),
                 ]

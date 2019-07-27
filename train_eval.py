@@ -181,13 +181,18 @@ def main():
 
         # TODO(seungjaeryanlee): Evaluation should be done with 3000 episodes
         eval_episode_length, eval_success, eval_episode_cost = nfq_agent.evaluate(
-            eval_env, CONFIG.EVAL_RENDER,
+            eval_env, CONFIG.EVAL_RENDER
         )
 
         if CONFIG.INCREMENT_EXPERIENCE:
             logger.info(
-                "Epoch {:4d} | Train {:3d} / {:4.2f} | Eval {:4d} / {:5.2f} | Train Loss {:.4f}".format(
-                    epoch, len(new_rollout), episode_cost, eval_episode_length, eval_episode_cost, loss
+                "Epoch {:4d} | Train {:3d} / {:4.2f} | Eval {:4d} / {:5.2f} | Train Loss {:.4f}".format(  # noqa: B950
+                    epoch,
+                    len(new_rollout),
+                    episode_cost,
+                    eval_episode_length,
+                    eval_episode_cost,
+                    loss,
                 )
             )
         else:
