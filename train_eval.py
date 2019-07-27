@@ -184,11 +184,18 @@ def main():
             eval_env, CONFIG.EVAL_RENDER,
         )
 
-        logger.info(
-            "Epoch {:4d} | Length {:4d} | Cost {:5.2f} | Train Loss {:.4f}".format(
-                epoch, eval_episode_length, eval_episode_cost, loss
+        if CONFIG.INCREMENT_EXPERIENCE:
+            logger.info(
+                "Epoch {:4d} | Train {:3d} / {:4.2f} | Eval {:4d} / {:5.2f} | Train Loss {:.4f}".format(
+                    epoch, len(new_rollout), episode_cost, eval_episode_length, eval_episode_cost, loss
+                )
             )
-        )
+        else:
+            logger.info(
+                "Epoch {:4d} | Eval {:4d} / {:5.2f} | Train Loss {:.4f}".format(
+                    epoch, eval_episode_length, eval_episode_cost, loss
+                )
+            )
         if CONFIG.USE_TENSORBOARD:
             if CONFIG.INCREMENT_EXPERIENCE:
                 writer.add_scalar("train/episode_length", len(new_rollout), epoch)
