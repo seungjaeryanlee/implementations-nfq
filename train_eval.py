@@ -195,20 +195,32 @@ def main():
                     loss,
                 )
             )
+            if CONFIG.USE_TENSORBOARD:
+                writer.add_scalar("train/episode_length", len(new_rollout), epoch)
+                writer.add_scalar("train/episode_cost", episode_cost, epoch)
+                writer.add_scalar("train/loss", loss, epoch)
+                writer.add_scalar("eval/episode_length", eval_episode_length, epoch)
+                writer.add_scalar("eval/episode_cost", eval_episode_cost, epoch)
+            if CONFIG.USE_WANDB:
+                wandb.log({"Train Episode Length": len(new_rollout)}, step=epoch)
+                wandb.log({"Train Episode Cost": episode_cost}, step=epoch)
+                wandb.log({"Train Loss": loss}, step=epoch)
+                wandb.log({"Evaluation Episode Length": eval_episode_length}, step=epoch)
+                wandb.log({"Evaluation Episode Cost": eval_episode_cost}, step=epoch)
         else:
             logger.info(
                 "Epoch {:4d} | Eval {:4d} / {:5.2f} | Train Loss {:.4f}".format(
                     epoch, eval_episode_length, eval_episode_cost, loss
                 )
             )
-        if CONFIG.USE_TENSORBOARD:
-            if CONFIG.INCREMENT_EXPERIENCE:
-                writer.add_scalar("train/episode_length", len(new_rollout), epoch)
-            writer.add_scalar("eval/episode_length", eval_episode_length, epoch)
-        if CONFIG.USE_WANDB:
-            if CONFIG.INCREMENT_EXPERIENCE:
-                wandb.log({"Train Episode Length": len(new_rollout)}, step=epoch)
-            wandb.log({"Evaluation Episode Length": eval_episode_length}, step=epoch)
+            if CONFIG.USE_TENSORBOARD:
+                writer.add_scalar("train/loss", loss, epoch)
+                writer.add_scalar("eval/episode_length", eval_episode_length, epoch)
+                writer.add_scalar("eval/episode_cost", eval_episode_cost, epoch)
+            if CONFIG.USE_WANDB:
+                wandb.log({"Train Loss": loss}, step=epoch)
+                wandb.log({"Evaluation Episode Length": eval_episode_length}, step=epoch)
+                wandb.log({"Evaluation Episode Cost": eval_episode_cost}, step=epoch)
 
         if eval_success:
             logger.info(
@@ -216,6 +228,12 @@ def main():
                     epoch, len(all_rollouts), total_cost
                 )
             )
+            if CONFIG.USE_TENSORBOARD:
+                writer.add_scalar("summary/total_cycles", len(all_rollouts), epoch)
+                writer.add_scalar("summary/total_cost", total_cost, epoch)
+            if CONFIG.USE_WANDB:
+                wandb.log({"Total Cycles": len(all_rollouts)}, step=epoch)
+                wandb.log({"Total Cost": total_cost}, step=epoch)
             break
 
     # Save trained agent
