@@ -5,6 +5,8 @@
 [![isort Build Status](https://img.shields.io/travis/com/seungjaeryanlee/implementations-nfq.svg?label=isort)](https://travis-ci.com/seungjaeryanlee/implementations-nfq)
 [![pytest Build Status](https://img.shields.io/travis/com/seungjaeryanlee/implementations-nfq.svg?label=pytest)](https://travis-ci.com/seungjaeryanlee/implementations-nfq)
 
+[![numpydoc Docstring Style](https://img.shields.io/badge/docstring-numpydoc-blue.svg)](https://numpydoc.readthedocs.io/en/latest/format.html#docstring-standard)
+
 This repository is a implementation of the paper [Neural Fitted Q Iteration - First Experiences with a Data Efficient Neural Reinforcement Learning Method](/paper.pdf).
 
 For implementations of other deep learning papers, check the centralized [implementations](https://github.com/seungjaeryanlee/implementations) repository!
