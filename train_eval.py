@@ -165,6 +165,8 @@ def main():
         state_action_b, target_q_values = nfq_agent.generate_pattern_set(all_rollouts)
 
         # Variant 2: Clamp function to zero in goal region
+        # TODO(seungjaeryanlee): Since this is a regulator setting, should it
+        #                        not be clamped to zero?
         if CONFIG.HINT_TO_GOAL:
             goal_state_action_b, goal_target_q_values = train_env.get_goal_pattern_set()
             goal_state_action_b = torch.FloatTensor(goal_state_action_b)
