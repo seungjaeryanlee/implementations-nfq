@@ -6,6 +6,7 @@ dep:
 dev:
 	pip install -r requirements.txt
 	pip install -r requirements-dev.txt
+	pre-commit install
 
 # Format code with black and isort
 format:
