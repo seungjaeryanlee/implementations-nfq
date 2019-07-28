@@ -4,6 +4,8 @@ flake8-bugbear>=19.3.0
 flake8-docstrings>=1.3.0
 isort>=4.3.21
 pytest>=5.0.1
+# https://github.com/pytest-dev/pytest-cov/issues/252
+pytest-remotedata>=0.3.1
 seed-isort-config>=1.9.2
 
 # https://github.com/PyCQA/pydocstyle/issues/375
