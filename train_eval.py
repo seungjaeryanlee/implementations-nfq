@@ -55,10 +55,10 @@ import configargparse
 import torch
 import torch.optim as optim
 
+from environments import CartPoleRegulatorEnv
 from nfq.agents import NFQAgent
-from nfq.environments import CartPoleRegulatorEnv
 from nfq.networks import NFQNetwork
-from nfq.utils import get_logger, make_reproducible
+from utils import get_logger, make_reproducible
 
 
 def main():

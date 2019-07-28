@@ -6,7 +6,7 @@ import coloredlogs
 
 def get_logger():
     """Initialize Python logger that outputs to file and console."""
-    logger = logging.getLogger()
+    logger = logging.getLogger("asdf")
     logger.setLevel(logging.DEBUG)
     fh = logging.FileHandler("run.log")
     fh.setLevel(logging.DEBUG)

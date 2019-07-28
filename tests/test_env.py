@@ -2,7 +2,7 @@
 import numpy as np
 import pytest
 
-from nfq.environments import CartPoleRegulatorEnv as Env
+from environments import CartPoleRegulatorEnv as Env
 
 
 class TestCartPoleRegulatorEnv:
