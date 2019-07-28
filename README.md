@@ -8,9 +8,10 @@
 [![numpydoc Docstring Style](https://img.shields.io/badge/docstring-numpydoc-blue.svg)](https://numpydoc.readthedocs.io/en/latest/format.html#docstring-standard)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-blue.svg)](.pre-commit-config.yaml)
 
-This repository is a implementation of the paper [Neural Fitted Q Iteration - First Experiences with a Data Efficient Neural Reinforcement Learning Method](/paper.pdf).
+This repository is an implementation of the paper [Neural Fitted Q Iteration - First Experiences with a Data Efficient Neural Reinforcement Learning Method (Riedmiller, 2005)](/paper.pdf).
 
-For implementations of other deep learning papers, check the centralized [implementations](https://github.com/seungjaeryanlee/implementations) repository!
+**Please ⭐ this repository if you found it useful!**
+
 
 ---
 
@@ -23,6 +24,8 @@ For implementations of other deep learning papers, check the centralized [implem
 - [Differences from the Paper](#differences-from-the-paper-)
 - [Reproducibility](#reproducibility-)
  
+For implementations of other deep learning papers, check the **[implementations](https://github.com/seungjaeryanlee/implementations) repository**!
+
 ---
  
 ### Summary 📝
@@ -41,6 +44,30 @@ You can read more about each package in the comments of the [requirements.txt](/
 
 ### Running 🏃
 
+You can train the NFQ agent on Cartpole Regulator using the given configuration file with the below command:
+```
+python train_eval.py -c cartpole.conf
+```
+
+For a reproducible run, use the `--RANDOM_SEED` flag.
+```
+python train_eval.py -c cartpole.conf --RANDOM_SEED=1
+```
+
+To save a trained agent, use the `--SAVE_PATH` flag.
+```
+python train_eval.py -c cartpole.conf --SAVE_PATH=saves/cartpole.pth
+```
+
+To load a trained agent, use the `--LOAD_PATH` flag.
+```
+python train_eval.py -c cartpole.conf --LOAD_PATH=saves/cartpole.pth
+```
+
+To enable logging to TensorBoard or W&B, use appropriate flags.
+```
+python train_eval.py -c cartpole.conf --USE_TENSORBOARD --USE_WANDB
+```
 
 ### Results 📊
 
@@ -62,5 +89,19 @@ This repository uses **TensorBoard** for offline logging and **Weights & Biases*
 
 ### Differences from the Paper 👥
 
+- From the 3 environments (Pole Balancing, Mountain Car, Cartpole Regulator), only the Cartpole Regulator environment was implemented and tested. It is the most difficult environment.
+- For the Cartpole Regulator, the success state is relaxed so that the state is successful whenever the pole angle is at most 24 degrees away from upright position. In the original paper, the cart must also be in the center with 0.05 tolerance.
+- Evaluation of the trained policy is only done in 1 evaluation environment, instead of 1000.
+
 ### Reproducibility 🎯
+
+Despite having no open-source code, the paper had sufficient details to implement NFQ. However, the results were not fully reproducible: we had to relax the definition of goal states and simplify evaluation. Still, the agent was able to learn to balance a CartPole for 3000 steps while only training from 100-step environment.
+
+Few nits:
+
+- There is no specification of pole angle for goal and forbidden states. We set 0~24 degrees from upright position as a requirement for goal state and any state with 90+ degrees forbidden.
+- The paper randomly initializes network weights within [−0.5, 0.5], but does not mention bias initialization.
+- The goal velocity of the success states is not mentioned. We use a normal distribution to randomly generate velocities for the hint-to-goal variant.
+- It is unclear whether to add experience after or before training the agent for each epoch. We assume adding experience before training.
+- The learning rate for the Rprop optimizer is not specified.
 
