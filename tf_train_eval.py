@@ -55,9 +55,7 @@ import tensorflow as tf
 from environments import CartPoleRegulatorEnv
 from nfq_tf.agents import NFQAgent
 from nfq_tf.networks import NFQNetwork
-from utils import get_logger, make_reproducible
-from utils import tf_load as load
-from utils import tf_save as save
+from utils import get_logger, load, make_reproducible, save
 
 
 def main():
@@ -142,8 +140,7 @@ def main():
 
     # Load trained agent
     if CONFIG.LOAD_PATH:
-        # load(net, optimizer, CONFIG.LOAD_PATH)
-        load(nfq_net, CONFIG.LOAD_PATH)
+        load(nfq_net, optimizer, CONFIG.LOAD_PATH)
 
     # NFQ Main loop
     # A set of transition samples denoted as D
@@ -242,7 +239,7 @@ def main():
 
     # Save trained agent
     if CONFIG.SAVE_PATH:
-        save(nfq_net, CONFIG.SAVE_PATH)
+        save(nfq_net, optimizer, CONFIG.SAVE_PATH)
 
     train_env.close()
     eval_env.close()
