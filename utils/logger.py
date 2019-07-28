@@ -20,4 +20,8 @@ def get_logger():
     logger.addHandler(fh)
     logger.addHandler(ch)
 
+    # Fix TensorFlow doubling logs
+    # https://stackoverflow.com/questions/33662648/tensorflow-causes-logging-messages-to-double
+    logger.propagate = False
+
     return logger
