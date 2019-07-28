@@ -1,7 +1,9 @@
 """Ensure reproducibility."""
 
 
-def make_reproducible(seed, use_random=False, use_numpy=False, use_torch=False):
+def make_reproducible(
+    seed, use_random=False, use_numpy=False, use_torch=False, use_tensorflow=False
+):
     """Set random seeds to ensure reproducibility."""
     if use_random:
         import random
@@ -17,3 +19,7 @@ def make_reproducible(seed, use_random=False, use_numpy=False, use_torch=False):
         torch.manual_seed(seed)
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
+    if use_tensorflow:
+        import tensorflow as tf
+
+        tf.random.set_seed(seed)

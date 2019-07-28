@@ -127,7 +127,7 @@ def main():
     if CONFIG.RANDOM_SEED is not None:
         # TODO TensorFlow
         make_reproducible(
-            CONFIG.RANDOM_SEED, use_random=True, use_numpy=True, use_torch=True
+            CONFIG.RANDOM_SEED, use_random=True, use_numpy=True, use_tensorflow=True
         )
         train_env.seed(CONFIG.RANDOM_SEED)
         eval_env.seed(CONFIG.RANDOM_SEED)
