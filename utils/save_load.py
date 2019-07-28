@@ -2,16 +2,7 @@
 import os
 
 
-def load(net, optimizer, load_dir, framework):
-    """Load network and optimizer."""
-    assert framework in ["pytorch", "tensorflow"]
-    if framework == "pytorch":
-        return _pt_load(net, optimizer, load_dir)
-    else:
-        return _tf_load(net, load_dir)
-
-
-def _pt_load(net, optimizer, load_dir):
+def pt_load(net, optimizer, load_dir):
     """Load PyTorch network and optimizer."""
     import torch
 
@@ -22,7 +13,7 @@ def _pt_load(net, optimizer, load_dir):
     return net, optimizer
 
 
-def _tf_load(net, load_dir):
+def tf_load(net, load_dir):
     """Load TensorFlow network.
 
     NOTE(seungjaeryanlee): Does not load optimizer.
@@ -34,16 +25,7 @@ def _tf_load(net, load_dir):
     return net
 
 
-def save(net, optimizer, save_dir, framework):
-    """Save network and optimizer."""
-    assert framework in ["pytorch", "tensorflow"]
-    if framework == "pytorch":
-        return _pt_save(net, optimizer, save_dir)
-    else:
-        return _tf_save(net, save_dir)
-
-
-def _pt_save(net, optimizer, save_dir):
+def pt_save(net, optimizer, save_dir):
     """Save PyTorch network and optimizer."""
     # Create specified directory if it does not exist yet
     if not os.path.exists(save_dir):
@@ -59,7 +41,7 @@ def _pt_save(net, optimizer, save_dir):
     return net, optimizer
 
 
-def _tf_save(net, save_dir):
+def tf_save(net, save_dir):
     """Save TensorFlow network.
 
     NOTE(seungjaeryanlee): Does not save optimizer.

@@ -17,14 +17,14 @@ For a reproducible run, use the RANDOM_SEED flag.
 python train_eval.py -c cartpole.conf --RANDOM_SEED=1
 ```
 
-To save a trained agent, use the SAVE_PATH flag.
+To save a trained agent, use the SAVE_DIR flag.
 ```
-python train_eval.py -c cartpole.conf --SAVE_PATH=saves/cartpole.pth
+python train_eval.py -c cartpole.conf --SAVE_DIR=saves/
 ```
 
-To load a trained agent, use the LOAD_PATH flag.
+To load a trained agent, use the LOAD_DIR flag.
 ```
-python train_eval.py -c cartpole.conf --LOAD_PATH=saves/cartpole.pth
+python train_eval.py -c cartpole.conf --LOAD_DIR=saves/
 ```
 
 To enable logging to TensorBoard or W&B, use appropriate flags.
@@ -49,8 +49,6 @@ Glossary
 env : Environment
 obs : Observation
 """
-import os
-
 import configargparse
 import torch
 import torch.optim as optim
@@ -58,7 +56,7 @@ import torch.optim as optim
 from environments import CartPoleRegulatorEnv
 from nfq.agents import NFQAgent
 from nfq.networks import NFQNetwork
-from utils import get_logger, make_reproducible
+from utils import get_logger, make_reproducible, pt_load, pt_save
 
 
 def main():
@@ -76,8 +74,8 @@ def main():
     parser.add("--RANDOM_SEED", type=int)
     parser.add("--TRAIN_RENDER", action="store_true")
     parser.add("--EVAL_RENDER", action="store_true")
-    parser.add("--SAVE_PATH", type=str, default="")
-    parser.add("--LOAD_PATH", type=str, default="")
+    parser.add("--SAVE_DIR", type=str, default="")
+    parser.add("--LOAD_DIR", type=str, default="")
     parser.add("--USE_TENSORBOARD", action="store_true")
     parser.add("--USE_WANDB", action="store_true")
     CONFIG = parser.parse_args()
@@ -139,10 +137,8 @@ def main():
     nfq_agent = NFQAgent(nfq_net, optimizer)
 
     # Load trained agent
-    if CONFIG.LOAD_PATH:
-        state_dict = torch.load(CONFIG.LOAD_PATH)
-        nfq_net.load_state_dict(state_dict["nfq_net"])
-        optimizer.load_state_dict(state_dict["optimizer"])
+    if CONFIG.LOAD_DIR:
+        pt_load(nfq_net, optimizer, CONFIG.LOAD_DIR)
 
     # NFQ Main loop
     # A set of transition samples denoted as D
@@ -241,16 +237,8 @@ def main():
             break
 
     # Save trained agent
-    if CONFIG.SAVE_PATH:
-        # Create specified directory if it does not exist yet
-        SAVE_DIRECTORY = "/".join(CONFIG.SAVE_PATH.split("/")[:-1])
-        if not os.path.exists(SAVE_DIRECTORY):
-            os.makedirs(SAVE_DIRECTORY)
-
-        torch.save(
-            {"nfq_net": nfq_net.state_dict(), "optimizer": optimizer.state_dict()},
-            CONFIG.SAVE_PATH,
-        )
+    if CONFIG.SAVE_DIR:
+        pt_save(nfq_net, optimizer, CONFIG.SAVE_DIR)
 
     train_env.close()
     eval_env.close()

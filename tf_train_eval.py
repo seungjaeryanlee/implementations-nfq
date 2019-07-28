@@ -17,9 +17,9 @@ For a reproducible run, use the RANDOM_SEED flag.
 python train_eval.py -c cartpole.conf --RANDOM_SEED=1
 ```
 
-To save a trained agent, use the SAVE_PATH flag.
+To save a trained agent, use the SAVE_DIR flag.
 ```
-python train_eval.py -c cartpole.conf --SAVE_PATH=saves/cartpole.pth
+python train_eval.py -c cartpole.conf --SAVE_DIR=saves/
 ```
 
 To load a trained agent, use the LOAD_PATH flag.
@@ -55,7 +55,7 @@ import tensorflow as tf
 from environments import CartPoleRegulatorEnv
 from nfq_tf.agents import NFQAgent
 from nfq_tf.networks import NFQNetwork
-from utils import get_logger, load, make_reproducible, save
+from utils import get_logger, make_reproducible, tf_load, tf_save
 
 
 def main():
@@ -73,7 +73,7 @@ def main():
     parser.add("--RANDOM_SEED", type=int)
     parser.add("--TRAIN_RENDER", action="store_true")
     parser.add("--EVAL_RENDER", action="store_true")
-    parser.add("--SAVE_PATH", type=str, default="")
+    parser.add("--SAVE_DIR", type=str, default="")
     parser.add("--LOAD_PATH", type=str, default="")
     parser.add("--USE_TENSORBOARD", action="store_true")
     parser.add("--USE_WANDB", action="store_true")
@@ -140,7 +140,7 @@ def main():
 
     # Load trained agent
     if CONFIG.LOAD_PATH:
-        load(nfq_net, optimizer, CONFIG.LOAD_PATH)
+        nfq_net = tf_load(nfq_net, CONFIG.LOAD_PATH)
 
     # NFQ Main loop
     # A set of transition samples denoted as D
@@ -238,8 +238,8 @@ def main():
             break
 
     # Save trained agent
-    if CONFIG.SAVE_PATH:
-        save(nfq_net, optimizer, CONFIG.SAVE_PATH)
+    if CONFIG.SAVE_DIR:
+        tf_save(nfq_net, CONFIG.SAVE_DIR)
 
     train_env.close()
     eval_env.close()
