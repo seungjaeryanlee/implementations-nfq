@@ -1,12 +1,12 @@
 # Neural Fitted Q Iteration - First Experiences with a Data Efficient Neural Reinforcement Learning Method
 
-[![black Build Status](https://img.shields.io/travis/com/seungjaeryanlee/implementations-nfq.svg?label=black)](https://travis-ci.com/seungjaeryanlee/implementations-nfq)
-[![flake8 Build Status](https://img.shields.io/travis/com/seungjaeryanlee/implementations-nfq.svg?label=flake8)](https://travis-ci.com/seungjaeryanlee/implementations-nfq)
-[![isort Build Status](https://img.shields.io/travis/com/seungjaeryanlee/implementations-nfq.svg?label=isort)](https://travis-ci.com/seungjaeryanlee/implementations-nfq)
-[![pytest Build Status](https://img.shields.io/travis/com/seungjaeryanlee/implementations-nfq.svg?label=pytest)](https://travis-ci.com/seungjaeryanlee/implementations-nfq)
+[![black Build Status](https://img.shields.io/travis/com/seungjaeryanlee/implementations-nfq.svg?label=black)](https://black.readthedocs.io/en/stable/)
+[![flake8 Build Status](https://img.shields.io/travis/com/seungjaeryanlee/implementations-nfq.svg?label=flake8)](http://flake8.pycqa.org/en/latest/)
+[![isort Build Status](https://img.shields.io/travis/com/seungjaeryanlee/implementations-nfq.svg?label=isort)](https://pypi.org/project/isort/)
+[![pytest Build Status](https://img.shields.io/travis/com/seungjaeryanlee/implementations-nfq.svg?label=pytest)](https://docs.pytest.org/en/latest/)
 
 [![numpydoc Docstring Style](https://img.shields.io/badge/docstring-numpydoc-blue.svg)](https://numpydoc.readthedocs.io/en/latest/format.html#docstring-standard)
-[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-blue.svg)](.pre-commit-config.yaml)
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-blue.svg)](https://pre-commit.com/)
 
 This repository is an implementation of the paper [Neural Fitted Q Iteration - First Experiences with a Data Efficient Neural Reinforcement Learning Method (Riedmiller, 2005)](/paper.pdf).
 
