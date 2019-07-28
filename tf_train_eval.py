@@ -56,6 +56,8 @@ from environments import CartPoleRegulatorEnv
 from nfq_tf.agents import NFQAgent
 from nfq_tf.networks import NFQNetwork
 from utils import get_logger, make_reproducible
+from utils import tf_load as load
+from utils import tf_save as save
 
 
 def main():
@@ -139,11 +141,9 @@ def main():
     nfq_agent = NFQAgent(nfq_net, optimizer)
 
     # Load trained agent
-    # TODO TensorFlow
-    # if CONFIG.LOAD_PATH:
-    #     state_dict = torch.load(CONFIG.LOAD_PATH)
-    #     nfq_net.load_state_dict(state_dict["nfq_net"])
-    #     optimizer.load_state_dict(state_dict["optimizer"])
+    if CONFIG.LOAD_PATH:
+        # load(net, optimizer, CONFIG.LOAD_PATH)
+        load(nfq_net, CONFIG.LOAD_PATH)
 
     # NFQ Main loop
     # A set of transition samples denoted as D
@@ -241,17 +241,8 @@ def main():
             break
 
     # Save trained agent
-    # TODO TensorFlow
-    # if CONFIG.SAVE_PATH:
-    #     # Create specified directory if it does not exist yet
-    #     SAVE_DIRECTORY = "/".join(CONFIG.SAVE_PATH.split("/")[:-1])
-    #     if not os.path.exists(SAVE_DIRECTORY):
-    #         os.makedirs(SAVE_DIRECTORY)
-
-    #     torch.save(
-    #         {"nfq_net": nfq_net.state_dict(), "optimizer": optimizer.state_dict()},
-    #         CONFIG.SAVE_PATH,
-    #     )
+    if CONFIG.SAVE_PATH:
+        save(nfq_net, CONFIG.SAVE_PATH)
 
     train_env.close()
     eval_env.close()
