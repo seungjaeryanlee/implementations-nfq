@@ -263,6 +263,7 @@ class CartPoleRegulatorEnv(gym.Env):
         goal_state_action_b = [
             np.array(
                 [
+                    # NOTE(seungjaeryanlee): The success state in hint-to-goal is not relaxed.
                     # TODO(seungjaeryanlee): What is goal velocity?
                     np.random.uniform(-0.05, 0.05),
                     np.random.normal(),
