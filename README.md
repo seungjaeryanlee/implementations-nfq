@@ -46,15 +46,19 @@ You can read more about each package in the comments of the [requirements.txt](/
 
 This repository uses **TensorBoard** for offline logging and **Weights & Biases** for online logging. You can see the all the metrics in [my summary report at Weights & Biases](https://app.wandb.ai/seungjaeryanlee/implementations-nfq/reports?view=seungjaeryanlee%2FSummary)!
 
-| | |
-|-|-|
-| Train Episode Length | ![Train Episode Length](https://user-images.githubusercontent.com/6107926/62005353-07af6e80-b16d-11e9-8fc9-798af69de2e4.png) |
-| Train Episode Length | ![Evaluation Episode Length](https://user-images.githubusercontent.com/6107926/62005354-08480500-b16d-11e9-9c03-facb5f3c6b87.png) |
-| Train Episode Cost | ![Train Episode Cost](https://user-images.githubusercontent.com/6107926/62005355-08480500-b16d-11e9-9b82-6516677deec6.png) |
-| Evaluation Episode Cost | ![Evaluation Episode Cost](https://user-images.githubusercontent.com/6107926/62005356-08480500-b16d-11e9-95ed-09259728e1c3.png) |
-| Train Loss | ![Train Loss](https://user-images.githubusercontent.com/6107926/62005357-08480500-b16d-11e9-91ca-52368d49dce5.png) |
-| Total Cycle | ![Total Cycle](https://user-images.githubusercontent.com/6107926/62005359-08e09b80-b16d-11e9-949a-88313763992d.png) |
-| Total Cost | ![Total Cost](https://user-images.githubusercontent.com/6107926/62005360-08e09b80-b16d-11e9-9c89-a4f0f4e075a6.png) |
+<p align="center">
+  <img alt="Train Episode Length" src="https://user-images.githubusercontent.com/6107926/62005353-07af6e80-b16d-11e9-8fc9-798af69de2e4.png" width="49%">
+  <img alt="Evaluation Episode Length" src="https://user-images.githubusercontent.com/6107926/62005354-08480500-b16d-11e9-9c03-facb5f3c6b87.png" width="49%">
+</p>
+<p align="center">
+  <img alt="Train Episode Cost" src="https://user-images.githubusercontent.com/6107926/62005355-08480500-b16d-11e9-9b82-6516677deec6.png" width="49%">
+  <img alt="Evaluation Episode Cost" src="https://user-images.githubusercontent.com/6107926/62005356-08480500-b16d-11e9-95ed-09259728e1c3.png" width="49%">
+</p>
+<p align="center">
+  <img alt="Total Cycle" src="https://user-images.githubusercontent.com/6107926/62005359-08e09b80-b16d-11e9-949a-88313763992d.png" width="32%">
+  <img alt="Total Cost" src="https://user-images.githubusercontent.com/6107926/62005360-08e09b80-b16d-11e9-9c89-a4f0f4e075a6.png" width="32%">
+  <img alt="Train Loss" src="https://user-images.githubusercontent.com/6107926/62005357-08480500-b16d-11e9-91ca-52368d49dce5.png" width="32%">
+</p>
 
 ### Differences from the Paper 👥
 
