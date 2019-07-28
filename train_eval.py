@@ -205,7 +205,9 @@ def main():
                 wandb.log({"Train Episode Length": len(new_rollout)}, step=epoch)
                 wandb.log({"Train Episode Cost": episode_cost}, step=epoch)
                 wandb.log({"Train Loss": loss}, step=epoch)
-                wandb.log({"Evaluation Episode Length": eval_episode_length}, step=epoch)
+                wandb.log(
+                    {"Evaluation Episode Length": eval_episode_length}, step=epoch
+                )
                 wandb.log({"Evaluation Episode Cost": eval_episode_cost}, step=epoch)
         else:
             logger.info(
@@ -219,7 +221,9 @@ def main():
                 writer.add_scalar("eval/episode_cost", eval_episode_cost, epoch)
             if CONFIG.USE_WANDB:
                 wandb.log({"Train Loss": loss}, step=epoch)
-                wandb.log({"Evaluation Episode Length": eval_episode_length}, step=epoch)
+                wandb.log(
+                    {"Evaluation Episode Length": eval_episode_length}, step=epoch
+                )
                 wandb.log({"Evaluation Episode Cost": eval_episode_cost}, step=epoch)
 
         if eval_success:
