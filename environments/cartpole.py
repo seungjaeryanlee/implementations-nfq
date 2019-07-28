@@ -260,8 +260,8 @@ class CartPoleRegulatorEnv(gym.Env):
             Pattern set to train the NFQ network.
 
         """
-        goal_state_action_b = [
-            np.array(
+        goal_state_action_b = np.array(
+            [
                 [
                     # NOTE(seungjaeryanlee): The success state in hint-to-goal is not relaxed.
                     # TODO(seungjaeryanlee): What is goal velocity?
@@ -273,10 +273,12 @@ class CartPoleRegulatorEnv(gym.Env):
                     np.random.normal(),
                     np.random.randint(2),
                 ]
-            )
-            for _ in range(size)
-        ]
+                for _ in range(size)
+            ]
+        )
         goal_target_q_values = np.zeros(size)
+        assert goal_state_action_b.shape == (size, 5)
+        assert goal_target_q_values.shape == (size,)
 
         return goal_state_action_b, goal_target_q_values
 
