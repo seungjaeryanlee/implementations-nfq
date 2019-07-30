@@ -125,9 +125,7 @@ def main():
 
     # Fix random seeds
     if CONFIG.RANDOM_SEED is not None:
-        make_reproducible(
-            CONFIG.RANDOM_SEED, use_random=True, use_numpy=True, use_torch=True
-        )
+        make_reproducible(CONFIG.RANDOM_SEED, use_numpy=True, use_torch=True)
         train_env.seed(CONFIG.RANDOM_SEED)
         eval_env.seed(CONFIG.RANDOM_SEED)
     else:
