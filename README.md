@@ -34,7 +34,20 @@ Neural Fitted Q-Iteration used a deep neural network for a Q-network, with its i
 
 ### Installation 🧱
 
-This repository has [requirements.txt](/requirements.txt) for easy installation of PyPI packages.
+First, clone this repository from GitHub. Since this repository contains submodules, you should use the `--recursive` flag.
+
+```bash
+git clone --recursive https://github.com/seungjaeryanlee/implementations-nfq.git
+```
+
+If you already cloned the repository without the flag, you can download the submodules separately with the `git submodules` command:
+
+```bash
+git clone https://github.com/seungjaeryanlee/implementations-nfq.git
+git submodule update --init --recursive
+```
+
+After cloing the repository, use the [requirements.txt](/requirements.txt) for simple installation of PyPI packages.
 
 ```bash
 pip install -r requirements.txt
